@@ -48,3 +48,5 @@ def get_data_from_directory(directory_path):
                 data['duration'].append(get_audio_duration(audio_path))
 
     return pd.DataFrame(data)
+
+
