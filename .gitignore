@@ -1,4 +1,4 @@
-notebooks
-raw_data
+notebooks/*
+raw_data/*
 .env
 .DS_Store
