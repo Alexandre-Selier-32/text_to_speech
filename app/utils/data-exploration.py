@@ -2,6 +2,7 @@ import os
 import soundfile as sf
 import pandas as pd
 import json
+import eng_to_ipa as ipa
 
 def get_data_from_directory(directory_path):
     """
@@ -85,3 +86,9 @@ def add_phonems_and_tokens_to_df(df, tokenized_transcript, mapping_file):
     df['phonems'] = df['sequence_id'].map(phonems_dict)
 
     return df
+
+def text_to_phonems_with_eng_to_ipa(sentence):        
+    ipa_text = ipa.convert(sentence, keep_punct=False, stress_marks=None)
+    phonemes = list(ipa_text.replace(" ", "")) 
+
+    return phonemes
