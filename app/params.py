@@ -14,3 +14,9 @@ PATH_PHONES_MAPPING = f"{PATH_PHONES}/phones_mapping.json"
 # PATHS LJSPEECH
 PATH_LJ_AUDIOS = f"{LOCAL_DATA_PATH}/raw_data/LJSpeech/wavs"
 PATH_LJ_CSV = f"{LOCAL_DATA_PATH}/raw_data/LJSpeech/metadata.csv"
+
+#AUDIO 
+SAMPLE_RATE=22050
+N_FFT=512 
+HOP_LENGTH=320
+N_MELS=80
