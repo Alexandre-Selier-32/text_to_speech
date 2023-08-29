@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 import librosa
 import numpy as np
+import soundfile as sf
+from app.params import SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS
 
-def display_mel_spectrogram(mel_spectrogram, sr=16000, hop_length=512):
+def display_mel_spectrogram(mel_spectrogram, sr=SAMPLE_RATE, hop_length=HOP_LENGTH):
     """
-    Affiche un mel spectrogramme 
+    Affiche une visualisation du mel spectrogramme 
 
     Paramètres:
     - mel_spectrogram (numpy array): Le mel spectrogramme à afficher.
@@ -21,29 +23,29 @@ def display_mel_spectrogram(mel_spectrogram, sr=16000, hop_length=512):
     plt.tight_layout()
     plt.show()
 
-def get_sample_rates(audio_df):
+def get_sample_rates(audio_files_dict):
     """
-    Vérifie si tous les fichiers audio d'un DataFrame ont le même taux d'échantillonnage 
+    Vérifie si tous les fichiers audio d'un dictionnaire ont le même taux d'échantillonnage
 
     Parameters:
-    - audio_df : DataFrame contenant les path des fichiers audio.
+    - audio_files_dict : Dictionnaire qui contient en key les séquence_id et en value les paths des fichiers audio
 
     Return:
-    le taux d’échantillonnage unique des fichiers audios ou la liste de taux d'échantillonage.
+    Le taux d’échantillonnage unique des fichiers audio ou la liste de taux d'échantillonnage.
     """
     
     # Récupère les taux d'échantillonnage de tous les fichiers audio
-    sample_rates = audio_df['audio_file'].apply(lambda x: librosa.load(x, sr=None)[1])
-    unique_sample_rates = sample_rates.unique()
+    sample_rates = [sf.info(audio_path).samplerate for audio_path in audio_files_dict.values()]
+    unique_sample_rates = np.unique(sample_rates)
 
     if len(unique_sample_rates) == 1:
-        print(f"Tous les fichiers ({len(audio_df)} fichiers) ont un sample rate de {unique_sample_rates[0]} Hz.")
+        print(f"Tous les fichiers ({len(audio_files_dict)} fichiers) ont un taux d'échantillonnage de {unique_sample_rates[0]} Hz.")
         return unique_sample_rates[0]
     else:
-        print("Les fichiers ont des sample rates différents.")
+        print("Les fichiers ont des taux d'échantillonnage différents.")
         return unique_sample_rates
 
-def waveform_to_mel_spectrogram_from_stft(audio_path, n_fft=512, hop_length=320):
+def waveform_to_mel_spectrogram_from_stft(audio_path, n_fft=N_FFT, hop_length=HOP_LENGTH):
     """
     Calcule le mel spectrogram (numpy array) d'un fichier audio à partir de librosa.stft
     Le mel spectrogram est une représentation de l'audio proche de la perception humaine.
@@ -56,7 +58,7 @@ def waveform_to_mel_spectrogram_from_stft(audio_path, n_fft=512, hop_length=320)
     - n_mels: Nombre de bandes de fréquences visbiles sur notre mel spectrogram. 
 
     Retour:
-    - mel_spectrogram 
+    - mel_spectrogram array
     """
     
     y, _ = librosa.load(audio_path, sr=None)
@@ -65,7 +67,7 @@ def waveform_to_mel_spectrogram_from_stft(audio_path, n_fft=512, hop_length=320)
     
     return mel_spec
 
-def waveform_to_mel_spectrogram_from_spectrum(audio_path, n_fft=512, hop_length=320):
+def waveform_to_mel_spectrogram_from_spectrum(audio_path, sr=SAMPLE_RATE, n_fft=N_FFT, hop_length=HOP_LENGTH, n_mels=N_MELS):
     """
     Calcule le mel spectrogram (numpy array) d'un fichier audio à partir de librosa.feature.melspectrogram
     Le mel spectrogram est une représentation de l'audio proche de la perception humaine.
@@ -78,21 +80,21 @@ def waveform_to_mel_spectrogram_from_spectrum(audio_path, n_fft=512, hop_length=
     - n_mels: Nombre de bandes de fréquences visbiles sur notre mel spectrogram. 
 
     Retour:
-    - mel_spectrogram 
+    - mel_spectrogram array
     """
     
     y, _ = librosa.load(audio_path, sr=None)
-    S = librosa.feature.melspectrogram(y=y, n_fft=n_fft, hop_length=hop_length)
+    S = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
     mel_spec = librosa.power_to_db(S, ref=np.max)
     
     return mel_spec
 
-def get_melspecs_from_audio_files(audio_files_dict, sr=16000, n_fft=512, hop_length=320, n_mels=80):
+def get_melspecs_from_audio_files(audio_files_dict, sr=SAMPLE_RATE, n_fft=N_FFT, hop_length=HOP_LENGTH, n_mels=N_MELS):
     """
-    Calcule les mel spectrogrammes pour chaque fichier audio
+    Calcule le mel spectrogramme pour chaque fichier audio
     
     Parameters:
-    - audio_files: Dictionnaire avec les sequence_id comme clés et les path des fichiers audio comme valeurs.
+    - audio_files_dict: Dictionnaire avec les sequence_id comme clés et les path des fichiers audio comme valeurs.
     
     Return:
     - Dictionnaire avec les sequence_id comme clés et les mel spectrogrammes comme valeurs.
@@ -100,7 +102,7 @@ def get_melspecs_from_audio_files(audio_files_dict, sr=16000, n_fft=512, hop_len
     melspecs_dict = {}
     
     for sequence_id, audio_path in audio_files_dict.items():
-        melspecs_dict[sequence_id] = waveform_to_mel_spectrogram_from_spectrum(audio_path, sr, n_fft, hop_length, n_mels)
+        melspecs_dict[sequence_id] = waveform_to_mel_spectrogram_from_spectrum(audio_path, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
     
     return melspecs_dict
     
