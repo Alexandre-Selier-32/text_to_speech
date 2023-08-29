@@ -12,4 +12,3 @@ tensorflow
 pydub
 soundfile
 eng_to_ipa
-csv
