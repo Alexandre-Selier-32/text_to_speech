@@ -5,7 +5,7 @@ from io import BytesIO
 from pydub import AudioSegment
 import soundfile as sf
 from IPython.display import Audio, display
-from app.utils.text import get_phonem_tokens_from_directory, get_phonems_from_tokens
+from app.utils.text import get_phonem_tokens_from_directory, get_phonems_from_tokens, get_cleaned_transcriptions
 from app.utils.audio import get_melspecs_from_audio_files
 import csv
 
@@ -14,17 +14,17 @@ def display_data_by_df_row(row, show_transcript=True, show_seq=True, show_path=T
     """
     Affiche les informations d'une ligne du dataframe et un lecteur audio pour écouter l'extrait associé
     """
-    if show_transcript and row['transcription']:
+    if show_transcript and 'transcription' in row.keys():
         print("transcript:\n", row['transcription'])
-    if show_seq and row['sequence_id']:
+    if show_seq and 'sequence_id' in row.keys():
         print("sequence_id:\n", row['sequence_id'])
-    if show_path and row['audio_file']:
+    if show_path and 'audio_file' in row.keys():
         print("audio_file:\n", row['audio_file'])
-    if show_phonem and row['phonems']:
+    if show_phonem and 'phonems' in row.keys():
         print("phonem:\n", row['phonems'])
-    if show_tokens and row['phonem_tokens']:
+    if show_tokens and 'phonem_tokens' in row.keys():
         print("phonem_tokens:\n", row['phonem_tokens'])
-    if show_duration and row['duration']:
+    if show_duration and 'duration' in row.keys():
         print("duration:\n", row['duration'])
 
     # Temporary .wav as IPython.display doesn't handle the .flac files
@@ -188,6 +188,7 @@ def make_ljspeech_dataframe(audio_directory, metadata_directory):
 
     audio_files = get_audio_files_from_ljspeech(audio_directory)
     transcriptions = get_ljspeech_transcripts_from_metadata(metadata_directory)
+    clean_transcriptions = get_cleaned_transcriptions(transcriptions)
     durations = get_audio_duration_from_directory(audio_directory)
     melspecs = get_melspecs_from_audio_files(audio_files)
 
@@ -195,10 +196,10 @@ def make_ljspeech_dataframe(audio_directory, metadata_directory):
         'sequence_id': list(audio_files.keys()),
         'audio_file': list(audio_files.values()),
         'transcription': [transcriptions.get(seq_id, "") for seq_id in audio_files.keys()],
+        'clean_transcriptions': list(clean_transcriptions.values()),
         'duration': [durations.get(seq_id, 0) for seq_id in audio_files.keys()],
         'mel_spec': [melspecs.get(seq_id, []) for seq_id in audio_files.keys()],
 
     })
 
     return df
-
