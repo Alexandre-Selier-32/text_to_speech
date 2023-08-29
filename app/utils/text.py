@@ -1,5 +1,6 @@
 import json
 import eng_to_ipa as ipa
+import string
 
 def text_to_phonems(sentence):     
     """
@@ -82,3 +83,28 @@ def get_tokens_from_phonems(phonemized_transcripts_dict, mapping_file):
         tokens_dict[sequence_id] = token_phonem_sequence
 
     return tokens_dict
+
+def get_cleaned_transcriptions(transcriptions_dict):
+    """
+    Clean les transcriptions pour pouvoir les processer
+    
+    params : un dictionnaire de transcripts
+    
+    returns : un dictionnaire de clean_transcripts
+    """
+    def clean_transcription(transcription):
+        punc_to_remove = string.punctuation
+        lower = transcription.lower()
+        without_punc = lower.translate(str.maketrans('', '', punc_to_remove))
+        without_extra_spaces = " ".join(without_punc.split())
+        return without_extra_spaces
+    
+    clean_transcriptions_dict= {}
+    for sequence_id, transcription in transcriptions_dict.items():
+        clean_transcriptions_dict[sequence_id] = clean_transcription(transcription)
+    
+    return clean_transcriptions_dict
+        
+        
+         
+    
