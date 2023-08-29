@@ -100,7 +100,7 @@ def get_melspecs_from_audio_files(audio_files_dict, sr=16000, n_fft=512, hop_len
     melspecs_dict = {}
     
     for sequence_id, audio_path in audio_files_dict.items():
-        melspecs_dict[sequence_id] = waveform_to_mel_spectrogram(audio_path, sr, n_fft, hop_length, n_mels)
+        melspecs_dict[sequence_id] = waveform_to_mel_spectrogram_from_spectrum(audio_path, sr, n_fft, hop_length, n_mels)
     
     return melspecs_dict
     
