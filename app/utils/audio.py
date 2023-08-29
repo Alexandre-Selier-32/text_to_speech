@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import librosa
+import numpy as np
 
 def display_mel_spectrogram(mel_spectrogram, sr=16000, hop_length=512):
     """
@@ -42,9 +43,9 @@ def get_sample_rates(audio_df):
         print("Les fichiers ont des sample rates différents.")
         return unique_sample_rates
 
-def waveform_to_mel_spectrogram(audio_path, sr=16000, n_fft=512, hop_length=320, n_mels=80):
+def waveform_to_mel_spectrogram_from_stft(audio_path, n_fft=512, hop_length=320):
     """
-    Calcule le mel spectrogram (numpy array) d'un fichier audio
+    Calcule le mel spectrogram (numpy array) d'un fichier audio à partir de librosa.stft
     Le mel spectrogram est une représentation de l'audio proche de la perception humaine.
     
     Parameters:
@@ -58,9 +59,31 @@ def waveform_to_mel_spectrogram(audio_path, sr=16000, n_fft=512, hop_length=320,
     - mel_spectrogram 
     """
     
-    y, sr = librosa.load(audio_path, sr=sr)
+    y, _ = librosa.load(audio_path, sr=None)
+    stft = librosa.stft(y=y, n_fft=n_fft, hop_length=hop_length)
+    mel_spec = librosa.amplitude_to_db(stft, ref=np.max)
     
-    mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
+    return mel_spec
+
+def waveform_to_mel_spectrogram_from_spectrum(audio_path, n_fft=512, hop_length=320):
+    """
+    Calcule le mel spectrogram (numpy array) d'un fichier audio à partir de librosa.feature.melspectrogram
+    Le mel spectrogram est une représentation de l'audio proche de la perception humaine.
+    
+    Parameters:
+    - audio_path: path vers le fichier audio
+    - sr: Taux d'échantillonnage. C'est le nombre d'échantillons de son pris chaque seconde. 16.000Hz par défaut
+    - n_fft: Window size pour la transformée de Fourier. Une fenêtre plus grande donne plus de "détails" (comme un zoom)
+    - hop_length: Décalage entre chaque fenêtre analysée. 
+    - n_mels: Nombre de bandes de fréquences visbiles sur notre mel spectrogram. 
+
+    Retour:
+    - mel_spectrogram 
+    """
+    
+    y, _ = librosa.load(audio_path, sr=None)
+    S = librosa.feature.melspectrogram(y=y, n_fft=n_fft, hop_length=hop_length)
+    mel_spec = librosa.power_to_db(S, ref=np.max)
     
     return mel_spec
 
