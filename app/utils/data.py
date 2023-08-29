@@ -5,7 +5,7 @@ from io import BytesIO
 from pydub import AudioSegment
 import soundfile as sf
 from IPython.display import Audio, display
-from app.utils.text import get_phonem_tokens_from_directory, get_phonems_from_tokens, get_cleaned_transcriptions
+from app.utils.text import get_phonem_tokens_from_directory, get_phonems_from_tokens, get_cleaned_transcriptions, phonemize_transcripts
 from app.utils.audio import get_melspecs_from_audio_files
 from app.params import PATH_1H, PATH_1h_PHONES, PATH_LJ_AUDIOS, PATH_PHONES_MAPPING, PATH_LJ_CSV
 import csv
@@ -166,17 +166,18 @@ def make_ljspeech_dataframe(wavs_directory_path=PATH_LJ_AUDIOS, transcripts_csv_
     audio_files = get_audio_files_from_ljspeech(wavs_directory_path)
     transcriptions = get_ljspeech_transcripts_from_metadata(transcripts_csv_path)
     cleaned_transcriptions = get_cleaned_transcriptions(transcriptions)
+    phonemized_transcriptions = phonemize_transcripts(cleaned_transcriptions)
     durations = get_audio_duration_from_directory(wavs_directory_path)
     melspecs = get_melspecs_from_audio_files(audio_files)
-
+    
     df = pd.DataFrame({
         'sequence_id': list(audio_files.keys()),
         'audio_file': list(audio_files.values()),
-        'transcription': [transcriptions.get(seq_id, "") for seq_id in audio_files.keys()],
-        'cleaned_transcription': list(cleaned_transcriptions.values()),
-        'duration': [durations.get(seq_id, 0) for seq_id in audio_files.keys()],
-        'mel_spec': [melspecs.get(seq_id, []) for seq_id in audio_files.keys()],
-
+        'transcription': [transcriptions.get(sequence_id, "") for sequence_id in audio_files.keys()],
+        'cleaned_transcription': [cleaned_transcriptions.get(sequence_id, "") for sequence_id in audio_files.keys()],
+        'phonems': [phonemized_transcriptions.get(sequence_id, "") for sequence_id in audio_files.keys()],
+        'duration': [durations.get(sequence_id, 0) for sequence_id in audio_files.keys()],
+        'mel_spec': [melspecs.get(sequence_id, []) for sequence_id in audio_files.keys()],
     })
 
     return df

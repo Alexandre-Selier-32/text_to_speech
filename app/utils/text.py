@@ -1,21 +1,7 @@
 import json
-import eng_to_ipa as ipa
 import string
-
-def text_to_phonems(sentence):     
-    """
-    Convertit une chaîne de caractères en une liste de phonèmes en utilisant la librairie eng_to_ipa
-
-    Parameters:
-    - sentence : une chaîne de caractères
-
-    Retour:
-    - phonems: Liste des phonèmes associée à cette chaîne de caractères
-    """   
-    ipa_text = ipa.convert(sentence, keep_punct=False, stress_marks=None)
-    phonems_list = list(ipa_text.replace(" ", "")) 
-
-    return phonems_list
+from phonemizer import phonemize
+from phonemizer.separator import Separator
 
 # Nécessaire pour les transcriptions que ne sont pas déjà tokenisées
 def get_phonems_from_tokens(tokenized_transcripts_dict, mapping_file):
@@ -97,14 +83,30 @@ def get_cleaned_transcriptions(transcriptions_dict):
         lower = transcription.lower()
         without_punc = lower.translate(str.maketrans('', '', punc_to_remove))
         without_extra_spaces = " ".join(without_punc.split())
-        return without_extra_spaces
+        return without_extra_spaces.strip()
     
     clean_transcriptions_dict= {}
     for sequence_id, transcription in transcriptions_dict.items():
         clean_transcriptions_dict[sequence_id] = clean_transcription(transcription)
-    
     return clean_transcriptions_dict
         
-        
-         
+def phonemize_transcripts(clean_trancripts_dict, separator=Separator(phone=' ', word=None)):
+    """
+    Convertit les transcriptions en liste de phonèmes à l'aide de la librairie phonemizer
+
+    Parameters:
+    - transcripts_dict : un dictionnaire avec pour clés les sequence_id et pour valeurs les transcriptions textuelles.
+
+    Retour:
+    - phonems_dict: dictionnaire avec les sequence_id comme clés et une liste de phonèmes en valeur.
+    """
+    transcriptions = list(clean_trancripts_dict.values())
+    
+    phonemized_transcriptions = phonemize(transcriptions, separator=separator, strip=True)
+    phonemized_lists = [transcription.split(separator.phone) for transcription in phonemized_transcriptions]
+    
+    phonems_dict = {sequence_id: phonem_list for sequence_id, phonem_list in zip(clean_trancripts_dict.keys(), phonemized_lists)}
+    
+    return phonems_dict
+
     
