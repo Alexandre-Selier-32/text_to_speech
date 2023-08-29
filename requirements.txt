@@ -7,12 +7,8 @@ pandas
 matplotlib
 seaborn
 scikit-learn
-os
 librosa
 tensorflow
-io
 pydub
 soundfile
-json
-sys
 eng_to_ipa
