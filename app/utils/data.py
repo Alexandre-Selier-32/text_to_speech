@@ -5,8 +5,8 @@ from io import BytesIO
 from pydub import AudioSegment
 import soundfile as sf
 from IPython.display import Audio, display
-from text import get_phonem_tokens_from_directory, get_phonems_from_tokens
-from audio import get_melspecs_from_audio_files
+from app.utils.text import get_phonem_tokens_from_directory, get_phonems_from_tokens
+from app.utils.audio import get_melspecs_from_audio_files
 
 def display_data_by_df_row(row, show_transcript=True, show_seq=True, show_path=True, show_phonem=True, show_tokens=True, show_duration=True):
     """
@@ -110,7 +110,7 @@ def make_dataframe(directory_path, tokenized_transcript_file, mapping_file):
     audio_files = get_audio_files_from_directory(directory_path)
     transcriptions = get_transcriptions_from_directory(directory_path)
     durations = get_audio_duration_from_directory(directory_path)
-    tokenized_transcripts = get_phonem_tokens_from_directory(tokenized_transcript_file, mapping_file)
+    tokenized_transcripts = get_phonem_tokens_from_directory(tokenized_transcript_file)
     phonems = get_phonems_from_tokens(tokenized_transcripts, mapping_file)
     melspecs = get_melspecs_from_audio_files(audio_files)
 
