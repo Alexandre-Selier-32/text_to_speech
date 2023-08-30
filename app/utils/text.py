@@ -2,7 +2,6 @@ import json
 import string
 from phonemizer import phonemize
 from phonemizer.separator import Separator
-import re
 
 # Nécessaire pour les transcriptions que ne sont pas déjà tokenisées
 def get_phonems_from_tokens(tokenized_transcripts_dict, mapping_file):
@@ -101,13 +100,23 @@ def phonemize_transcripts(clean_trancripts_dict, separator=Separator(phone=' ', 
     Retour:
     - phonems_dict: dictionnaire avec les sequence_id comme clés et une liste de phonèmes en valeur.
     """
-    transcriptions = list(clean_trancripts_dict.values())
-    
+    transcriptions = clean_trancripts_dict.values()
+        
     phonemized_transcriptions = phonemize(transcriptions, separator=separator, strip=True)
         
-    phonemized_lists = [transcription.replace('/', ' ').split(separator.phone) 
+    phonemized_lists = [transcription.split(separator.phone) 
                         for transcription in phonemized_transcriptions]
-    
-    phonems_dict = {sequence_id: phonem_list for sequence_id, phonem_list in zip(clean_trancripts_dict.keys(), phonemized_lists)}
+        
+    without_liaisons = []
+    for phonemized_list in phonemized_lists:
+        new_list = []
+        for element in phonemized_list:
+            split_elements = element.split('/')
+            new_list.extend(split_elements)
+        without_liaisons.append(new_list)          
+
+    phonems_dict = {sequence_id: phonem_list 
+                    for sequence_id, phonem_list 
+                    in zip(clean_trancripts_dict.keys(), without_liaisons)}
     
     return phonems_dict
