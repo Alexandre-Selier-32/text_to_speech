@@ -14,7 +14,7 @@ class Attention(layers.Layer):
         scaler = self.embedding_dim ** 0.5
         scaled_dot_product = dot_product / tf.math.sqrt(scaler)
         
-        # add the mask to the scaled tensor.
+        # add the mask to the scaled tensor
         if mask is not None:
             scaled_dot_product += (mask * -1e9)
 

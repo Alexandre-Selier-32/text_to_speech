@@ -3,7 +3,7 @@ from tensorflow.keras import layers
 from app.model.MultiHeadAttention import MultiHeadAttention
 
 class EncoderLayer(layers.Layer):
-    def __init__(self, embedding_dim, num_heads, dff, kernel_size, rate):
+    def __init__(self, embedding_dim, num_heads, dff, conv_kernel_size, conv_filters, rate):
         super(EncoderLayer, self).__init__()
 
         # Multihead Attention
@@ -16,10 +16,10 @@ class EncoderLayer(layers.Layer):
         - and an extra linear layer to project the hidden states into the output sequence. 
         '''
         
-        # Convolutions 1D (parameters will be set in config file)
-        self.conv1 = layers.Conv1D(filters=dff, kernel_size=kernel_size, 
+        # Convolutions 1D 
+        self.conv1 = layers.Conv1D(filters=conv_filters, kernel_size=conv_kernel_size, 
                                          strides=1, padding='same', activation='relu')
-        self.conv2 = layers.Conv1D(filters=embedding_dim, kernel_size=kernel_size, 
+        self.conv2 = layers.Conv1D(filters=embedding_dim, kernel_size=conv_kernel_size, 
                                          strides=1, padding='same')
     
 
