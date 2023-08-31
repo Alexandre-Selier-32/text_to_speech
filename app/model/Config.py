@@ -5,6 +5,7 @@ class Config():
         self.num_heads = 2  # (2 pour l'Encoder, 2 pour le Decoder)
         self.dff = 1024  # Feed forward hidden layer size
         self.max_position_encoding = 10000
+        self.input_vocab_size = 49 # Nombre de tokens de phonems distincts
         
         # Encoder & Decoder hyperparams 
         self.num_layers = 4
