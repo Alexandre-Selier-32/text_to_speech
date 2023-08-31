@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers
-from app.model import MultiHeadAttention
+from app.model.MultiHeadAttention import MultiHeadAttention
 
 class EncoderLayer(layers.Layer):
     def __init__(self, embedding_dim, num_heads, dff, kernel_size, rate):
