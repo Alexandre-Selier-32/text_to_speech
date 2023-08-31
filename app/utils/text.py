@@ -55,19 +55,21 @@ def get_tokens_from_phonems(phonemized_transcripts_dict, mapping_file):
     Parameters:
     - phonemized_transcripts_dict : un dictionnaire avec les sequence_id comme clés et les listes de phonèmes comme valeurs.
     - mapping_file : path vers le fichier JSON contenant le mapping des phonèmes en tokens.
-
     Retour:
     - tokens_dict: Dictionnaire avec les sequence_id comme clés et les listes de tokens comme valeurs.
     """
     with open(mapping_file, 'r') as file:
-        phoneme_mapping = json.load(file)
+        phoneme_mapping_unicode = json.load(file)
+        
+    phoneme_mapping = {key.encode('utf-8').decode('unicode_escape'): value for key, value in phoneme_mapping_unicode.items()}
+
 
     tokens_dict = {}
 
     for sequence_id, phonemized_transcripts_array in phonemized_transcripts_dict.items():
         token_phonem_sequence = [phoneme_mapping[phonem] for phonem in phonemized_transcripts_array if phonem in phoneme_mapping]
         tokens_dict[sequence_id] = token_phonem_sequence
-
+        
     return tokens_dict
 
 def get_cleaned_transcriptions(transcriptions_dict):
@@ -175,6 +177,4 @@ def phonems_transcript_to_49(phonemized_transcriptions):
         processed_transcripts[sequence_id] = new_list
     
     return processed_transcripts
-
-
 

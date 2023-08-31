@@ -1,3 +1,19 @@
-# This function saves the input array y to a .npy file with the given path/filename
+import numpy as np
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
 def save_y_to_npy(y, path):
     np.save(path, arr= y)
+
+def get_padded_melspecs(melspecs_dict):
+    melspecs_lists = list(melspecs_dict.values())
+    
+    max_length = max(mel.shape[1] for mel in melspecs_lists)
+    
+    padded_mels = []
+    for mel in melspecs_lists:
+        padded_mel = np.pad(mel, ((0, 0), (0, max_length - mel.shape[1])), 'constant', constant_values=-10)
+        padded_mels.append(padded_mel)
+    
+    padded_melspecs_dict = {key: value for key, value in zip(melspecs_dict.keys(), padded_mels)}
+
+    return padded_melspecs_dict
