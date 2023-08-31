@@ -5,8 +5,11 @@ from io import BytesIO
 from pydub import AudioSegment
 import soundfile as sf
 from IPython.display import Audio, display
-from app.utils.text import get_phonem_tokens_from_directory, get_phonems_from_tokens, get_cleaned_transcriptions, phonems_transcript_to_49, get_tokens_from_phonems
+from app.utils.text import get_phonem_tokens_from_directory, get_phonems_from_tokens, get_cleaned_transcriptions, phonems_transcript_to_49, get_tokens_from_phonems, phonemize_transcripts
 from app.utils.audio import get_melspecs_from_audio_files
+from app.utils.preprocess_text import get_padded_tokenized_transcripts
+from app.utils.preprocess_audio import get_padded_melspecs
+
 from app.params import PATH_1H, PATH_1h_PHONES, PATH_LJ_AUDIOS, PATH_PHONES_MAPPING, PATH_LJ_CSV, PATH_PHONES_MAPPING_LJSPEECH
 import csv
 
@@ -164,22 +167,36 @@ def make_ljspeech_dataframe(wavs_directory_path=PATH_LJ_AUDIOS, transcripts_csv_
     """
 
     audio_files = get_audio_files_from_ljspeech(wavs_directory_path)
+    
     transcriptions = get_ljspeech_transcripts_from_metadata(transcripts_csv_path)
+    
     cleaned_transcriptions = get_cleaned_transcriptions(transcriptions)
-    phonemized_transcriptions = phonems_transcript_to_49(cleaned_transcriptions)
-    tokenized_transcriptions= get_tokens_from_phonems(phonemized_transcriptions, PATH_PHONES_MAPPING_LJSPEECH)
+    
+    extended_phonems = phonemize_transcripts(cleaned_transcriptions)
+    phonemized_transcripts = phonems_transcript_to_49(extended_phonems)
+
+    tokenized_transcriptions= get_tokens_from_phonems(phonemized_transcripts, PATH_PHONES_MAPPING_LJSPEECH)
+    
+    padded_tokenized_transcriptions = get_padded_tokenized_transcripts(tokenized_transcriptions)
+    
     durations = get_audio_duration_from_directory(wavs_directory_path)
+    
     melspecs = get_melspecs_from_audio_files(audio_files)
+    
+    padded_mel_specs = get_padded_melspecs(melspecs)
     
     df = pd.DataFrame({
         'sequence_id': list(audio_files.keys()),
         'audio_file': list(audio_files.values()),
         'transcription': [transcriptions.get(sequence_id, "") for sequence_id in audio_files.keys()],
         'cleaned_transcription': [cleaned_transcriptions.get(sequence_id, "") for sequence_id in audio_files.keys()],
-        'phonems': [phonemized_transcriptions.get(sequence_id, "") for sequence_id in audio_files.keys()],
+        'phonems': [phonemized_transcripts.get(sequence_id, "") for sequence_id in audio_files.keys()],
         'tokens': [tokenized_transcriptions.get(seq_id, []) for seq_id in audio_files.keys()],
+        'padded_tokens': [padded_tokenized_transcriptions.get(seq_id, []) for seq_id in audio_files.keys()],
         'duration': [durations.get(sequence_id, 0) for sequence_id in audio_files.keys()],
         'mel_spec': [melspecs.get(sequence_id, []) for sequence_id in audio_files.keys()],
+        'padded_mel_specs': [padded_mel_specs.get(seq_id, []) for seq_id in audio_files.keys()],
+
     })
 
     return df
