@@ -40,9 +40,9 @@ class MultiHeadAttention(layers.Layer):
 
         scaled_attention, softmaxed_attention_weights = self.attention(q, k, v, mask)
         scaled_attention = tf.transpose(scaled_attention, perm=[0, 2, 1, 3]) # (batch_size, seq_len_q, num_heads, depth)
-        concat_attention = tf.reshape(scaled_attention, (batch_size, -1, self.embedding_dim)) # (batch_size, seq_len_q, d_model)
+        concat_attention = tf.reshape(scaled_attention, (batch_size, -1, self.embedding_dim)) # (batch_size, seq_len_q, embedding_dim)
         
-        # combined_attention_output : c'est l'output après avoir combiné les résultats de toutes les têtes d'attention
-        combined_attention_output = self.dense(concat_attention) # (batch_size, seq_len_q, d_model)
+        # attention_ouptut : c'est l'output après avoir combiné les résultats de toutes les têtes d'attention
+        attention_ouptut = self.dense(concat_attention) # (batch_size, seq_len_q, embedding_dim)
 
-        return combined_attention_output, softmaxed_attention_weights
+        return attention_ouptut, softmaxed_attention_weights
