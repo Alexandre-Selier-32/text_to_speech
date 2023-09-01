@@ -27,7 +27,7 @@ class MultiHeadAttention(layers.Layer):
         x = tf.reshape(x, (batch_size, -1, self.num_heads, self.depth))
         return tf.transpose(x, perm=[0, 2, 1, 3])
 
-    def call(self, v, k, q, mask):
+    def call(self, v, k, q):
         batch_size = tf.shape(q)[0]
 
         q = self.wq(q)
@@ -38,11 +38,11 @@ class MultiHeadAttention(layers.Layer):
         k = self.split_heads(k, batch_size)
         v = self.split_heads(v, batch_size)
 
-        scaled_attention, softmaxed_attention_weights = self.attention(q, k, v, mask)
+        scaled_attention = self.attention(q, k, v)
         scaled_attention = tf.transpose(scaled_attention, perm=[0, 2, 1, 3]) # (batch_size, seq_len_q, num_heads, depth)
         concat_attention = tf.reshape(scaled_attention, (batch_size, -1, self.embedding_dim)) # (batch_size, seq_len_q, embedding_dim)
         
         # attention_ouptut : c'est l'output après avoir combiné les résultats de toutes les têtes d'attention
         attention_ouptut = self.dense(concat_attention) # (batch_size, seq_len_q, embedding_dim)
 
-        return attention_ouptut, softmaxed_attention_weights
+        return attention_ouptut
