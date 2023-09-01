@@ -3,7 +3,7 @@ import string
 from phonemizer import phonemize
 from phonemizer.separator import Separator
 
-# Nécessaire pour les transcriptions que ne sont pas déjà tokenisées
+# LIBRISPEECH
 def get_phonems_from_tokens(tokenized_transcripts_dict, mapping_file):
     """
     Convertit un dictionnaire de transcriptions tokenisées en un dictionnaire de transcriptions phonetisées
@@ -92,7 +92,7 @@ def get_cleaned_transcriptions(transcriptions_dict):
         clean_transcriptions_dict[sequence_id] = clean_transcription(transcription)
     return clean_transcriptions_dict
         
-        
+       
 def handle_multi_char_phonem(phonem):
     '''
     méthode qui prend en entrée un phonem et qui en ressort une liste de phonems 

@@ -4,12 +4,12 @@ import numpy as np
 from app.model.Encoder import Encoder
 from app.model.Decoder import Decoder
 from app.model.VariancePredictor import VariancePredictor
-from app.params import TOKEN_PADDING_VALUE
+from app.params import TOKEN_PADDING_VALUE, N_MELS
 
 class Transformer(Model):
     def __init__(self, num_layers, embedding_dim, num_heads, dff, input_vocab_size,
                  target_vocab_size, max_position_encoding, conv_kernel_size, conv_filters, rate,
-                 var_conv_filters, var_conv_kernel_size, var_num_layers, var_rate):
+                 var_conv_filters, var_conv_kernel_size, var_rate):
         super(Transformer, self).__init__()
         
         self.embedding = layers.Embedding(input_vocab_size, embedding_dim)
@@ -19,20 +19,22 @@ class Transformer(Model):
         self.padding_mask = self.create_tokens_padding_mask
 
         self.encoder = Encoder(num_layers, embedding_dim, num_heads, dff, 
-                               input_vocab_size, max_position_encoding, 
                                conv_kernel_size, conv_filters, rate)
+        
+        
+        # TODO Energy and Pitch predictors         
 
+        '''
+        self.duration_predictor = VariancePredictor(embedding_dim, conv_filters, 
+                                                    conv_kernel_size,
+                                                    num_layers, 
+                                                    rate)
+        '''
+        
         self.decoder = Decoder(num_layers, embedding_dim, num_heads, dff, 
                                target_vocab_size, max_position_encoding, rate)
         
-        self.duration_predictor = VariancePredictor(var_conv_filters, 
-                                                    var_conv_kernel_size,
-                                                    var_num_layers, 
-                                                    var_rate)
-        
-        #TODO Energy and Pitch predictors         
-
-        self.final_layer = layers.Dense(target_vocab_size)
+        self.final_layer = layers.Dense(N_MELS)
 
 
     def call(self, input): 
@@ -44,9 +46,9 @@ class Transformer(Model):
                 
         encoder_output = self.encoder(embedding_and_pos_output)  
         
-        predicted_duration = self.duration_predictor(encoder_output)
+        #predicted_duration = self.duration_predictor(encoder_output)
 
-        decoder_output = self.decoder(predicted_duration) 
+        decoder_output = self.decoder(encoder_output) 
         
         model_output = self.final_layer(decoder_output) 
 

@@ -40,8 +40,8 @@ class EncodecLayer(layers.Layer):
         ])
         
         
-    def call(self, input, mask):
-        attention_output, _ = self.multihead_att(input, input, input, mask)
+    def call(self, input):
+        attention_output = self.multihead_att(input, input, input)
         '''
         Attention is All You Need (https://arxiv.org/pdf/1706.03762.pdf)
         We apply dropout to the output of each sub-layer, before it is added to the

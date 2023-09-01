@@ -20,5 +20,5 @@ class Encoder(layers.Layer):
         encoder_output = input
         for layer in range(self.num_layers):
             encoder_output = self.encoder_layers[layer](encoder_output)
-
+            
         return encoder_output

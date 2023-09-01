@@ -1,8 +1,5 @@
 import numpy as np
 
-def save_y_to_npy(y, path):
-    np.save(path, arr= y)
-
 def get_padded_melspecs(melspecs_dict):
     melspecs_lists = list(melspecs_dict.values())
     

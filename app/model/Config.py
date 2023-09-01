@@ -14,10 +14,12 @@ class Config():
         self.rate = 0.1
 
         # Variance Predictor hyperparams
-        self.var_num_layers = 1 # ATTENTION CE N'EST PAS DANS LE PAPIER 
+        self.var_num_conv_layers = 2
         self.var_conv_filters = 256
         self.var_conv_kernel_size = 3
         self.var_rate = 0.5
+        
+        
         
 config = Config()
 
