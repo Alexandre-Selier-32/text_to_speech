@@ -16,9 +16,9 @@ class Decoder(layers.Layer):
 
         self.dropout = layers.Dropout(rate)
 
-    def call(self, input, mask):
+    def call(self, input):
         decoder_output = input
         for layer in range(self.num_layers):
-            decoder_output = self.decoder_layers[layer](decoder_output, mask)
+            decoder_output = self.decoder_layers[layer](decoder_output)
 
         return decoder_output

@@ -19,11 +19,11 @@ def initialize_model(config):
     )
     return model
 
+# ajouter learning rate scheduler 
 def compile_model(model):
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
     model.compile(optimizer=optimizer, loss='mean_squared_error')
 
 def train_model(model, train_dataset, val_dataset):
-    # Entraînement
     model.fit(train_dataset, validation_data=val_dataset, epochs=10)
     
