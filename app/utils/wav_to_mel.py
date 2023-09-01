@@ -7,7 +7,7 @@ from argparse import Namespace
 
 from data import get_audio_files_from_ljspeech
 from app.params import PATH_MELSPEC,SAMPLE_RATE,N_FFT,HOP_LENGTH,N_MELS
-
+from app.utils.preprocess_audio import get_padded_melspecs
 
 _mel_basis = None
 
@@ -146,7 +146,7 @@ def _griffin_lim(S, hparams):
 #         np.save(save_path, mel)
 
 
-def process_all_wavs_in_folder():
+#def process_all_wavs_in_folder():
     all_wav_paths = get_audio_files_from_ljspeech()
 
     for key, value in all_wav_paths.items():
@@ -163,5 +163,36 @@ def process_all_wavs_in_folder():
         np.save(file_path_and_name, mel)
         print('Files saved successfully')
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
     print(process_all_wavs_in_folder())
+
+
+def process_all_wavs_in_folder_padded():
+    all_wav_paths = get_audio_files_from_ljspeech()
+    mel_dict = dict()
+
+    for key, value in all_wav_paths.items():
+        # Load waveform
+        wav = load_wav(value, hparams)
+        # Convert mel spectrogram
+        mel = melspectrogram(wav, hparams)
+        # Lets build a dict
+        mel_dict[key] = mel
+    return mel_dict
+
+
+
+if __name__ == '__main__':
+    non_padded_dict = process_all_wavs_in_folder_padded()
+    print(non_padded_dict)
+    print(len(non_padded_dict))
+    mel_padded_dict = get_padded_melspecs(non_padded_dict)
+    print(len(mel_padded_dict))
+    print(mel_padded_dict)
+
+    for key, value in mel_padded_dict.items():
+        # build path + filename
+        file_path_and_name = f"{PATH_MELSPEC}/{key}.npy"
+        # Save mel spectrogram
+        np.save(file_path_and_name, value)
+    print('Files saved successfully')
