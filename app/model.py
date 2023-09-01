@@ -26,3 +26,4 @@ def compile_model(model):
 def train_model(model, train_dataset, val_dataset):
     # Entraînement
     model.fit(train_dataset, validation_data=val_dataset, epochs=10)
+    

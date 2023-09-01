@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers
-from app.model.EncoderLayer import EncoderLayer
+from app.model.EncodecLayer import EncodecLayer
 
 
 class Encoder(layers.Layer):
@@ -12,7 +12,7 @@ class Encoder(layers.Layer):
         self.num_layers = num_layers
 
         self.embedding = layers.TokenAndPositionEmbedding(input_vocab_size, embedding_dim, maximum_position_encoding)
-        self.encoder_layers = [EncoderLayer(embedding_dim, num_heads, dff, conv_kernel_size, conv_filters, rate) 
+        self.encoder_layers = [EncodecLayer(embedding_dim, num_heads, dff, conv_kernel_size, conv_filters, rate) 
                            for _ in range(num_layers)]
 
         self.dropout = layers.Dropout(rate)

@@ -2,9 +2,9 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from app.model.MultiHeadAttention import MultiHeadAttention
 
-class EncoderLayer(layers.Layer):
+class EncodecLayer(layers.Layer):
     def __init__(self, embedding_dim, num_heads, dff, conv_kernel_size, conv_filters, rate):
-        super(EncoderLayer, self).__init__()
+        super(EncodecLayer, self).__init__()
 
         # Multihead Attention
         self.multihead_att = MultiHeadAttention(embedding_dim, num_heads)
