@@ -30,4 +30,4 @@ def create_tokens_padding_mask_for(tokens_seq):
     - tf.Tensor: Un tensor de shape (batch_size, 1, 1, seq_len) représentant le masque de padding.
     """
     tokens_seq = tf.cast(tf.math.equal(tokens_seq, TOKEN_PADDING_VALUE), tf.float32)
-    return tokens_seq[:, tf.newaxis, tf.newaxis, :]
+    return tokens_seq

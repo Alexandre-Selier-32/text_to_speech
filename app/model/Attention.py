@@ -24,6 +24,6 @@ class Attention(layers.Layer):
         # Multiply by Values
         attention_output = tf.matmul(softmaxed_attention_weights, value,  name = "multiply_scores_w_value")
         
-        return attention_output, softmaxed_attention_weights
+        return attention_output
     
     
