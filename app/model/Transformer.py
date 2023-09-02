@@ -8,9 +8,8 @@ from app.params import TOKEN_PADDING_VALUE, N_MELS
 
 class Transformer(Model):
     def __init__(self, num_layers, embedding_dim, num_heads, dff, input_vocab_size,
-                 target_vocab_size, max_position_encoding, conv_kernel_size, conv_filters, rate,
-                 var_conv_filters, var_conv_kernel_size, var_rate):
-        super(Transformer, self).__init__()
+                 max_position_encoding, conv_kernel_size, conv_filters, rate):
+        super().__init__()
         
         self.embedding = layers.Embedding(input_vocab_size, embedding_dim)
         
@@ -32,7 +31,7 @@ class Transformer(Model):
         '''
         
         self.decoder = Decoder(num_layers, embedding_dim, num_heads, dff, 
-                               target_vocab_size, max_position_encoding, rate)
+                               conv_kernel_size, conv_filters, rate)
         
         self.final_layer = layers.Dense(N_MELS)
 

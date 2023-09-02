@@ -2,51 +2,9 @@ import json
 import string
 from phonemizer import phonemize
 from phonemizer.separator import Separator
-
-# LIBRISPEECH
-def get_phonems_from_tokens(tokenized_transcripts_dict, mapping_file):
-    """
-    Convertit un dictionnaire de transcriptions tokenisées en un dictionnaire de transcriptions phonetisées
-
-    Parameters:
-    - tokenized_transcripts_dict : un dictionnaire avec les sequence_id comme clés et les listes de tokens comme valeurs.
-    - mapping_file : path vers le fichier JSON contenant le mapping des phonèmes en tokens.
-
-    Retour:
-    - phonems_dict: Dictionnaire avec les sequence_id comme clés et les listes de phonèmes comme valeurs.
-    """
-    with open(mapping_file, 'r') as file:
-        phoneme_mapping = json.load(file)
-    inverted_mapping = {int(value): key for key, value in phoneme_mapping.items()}
-
-    phonems_dict = {}
-    for sequence_id, tokenized_transcript in tokenized_transcripts_dict.items():
-        phonems = [inverted_mapping[token] for token in tokenized_transcript if token in inverted_mapping]
-        phonems_dict[sequence_id] = phonems
-
-    return phonems_dict
-
-def get_phonem_tokens_from_directory(tokenized_transcript_file):
-    """
-    Récupère les transcription tokenisées des dossier imbriquées 
-    
-    Parameters:
-    - tokenized_transcript : chemin vers le fichier contenant une séquence de phonem tokens pour chaque sequence_id.
-    
-    Returns:
-    - phonem_tokens_dict: Dictionnaire avec les sequence_id comme clés et les listes de phonem_tokens comme valeurs.
-    """
-    
-    phonem_tokens_dict = {}
-
-    with open(tokenized_transcript_file, 'r') as file:
-        for line in file:
-            tokens = line.strip().split()
-            sequence_id = tokens[0]
-            token_phonem_sequence = [int(token) for token in tokens[1:]]
-            phonem_tokens_dict[sequence_id] = token_phonem_sequence
-            
-    return phonem_tokens_dict
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from app.params import *
+from app.utils import *
 
 def get_tokens_from_phonems(phonemized_transcripts_dict, mapping_file):
     """
@@ -91,35 +49,6 @@ def get_cleaned_transcriptions(transcriptions_dict):
     for sequence_id, transcription in transcriptions_dict.items():
         clean_transcriptions_dict[sequence_id] = clean_transcription(transcription)
     return clean_transcriptions_dict
-        
-       
-def handle_multi_char_phonem(phonem):
-    '''
-    méthode qui prend en entrée un phonem et qui en ressort une liste de phonems 
-    qui contiendra 1 ou plusieurs éléments.
-    Moche mais pragmatique.
-    '''
-    liste_44_phonems =  ['aɪ', 'aʊ', 'b', 'd', 'eɪ', 'f', 'h', 'i', 'iə', 'j', 'k', 'l', 'm', 'n', 'o', 'oʊ', 'p', 's', 't', 'uː', 'v', 'w', 'z', 'æ', 'ð', 'ŋ', 'ɑ', 'ɑː', 'ɔ', 'ɔɪ', 'ɔː', 'ə', 'ɚ', 'ɛ', 'ɡ', 'ɪ', 'ɹ', 'ɾ', 'ʃ', 'ʊ', 'ʊɹ', 'ʌ', 'ʒ', 'θ']
-    
-    # si la longueur du phonème est de 1, tu retournes une liste qui contient uniquement le phonème
-    if len(phonem) == 1:
-        return [phonem]
-    # si la longueur du phonème est > à 2, tu retourne une liste de 2 éléments. Le premier élement contient les 2 premiers caractères, le 2ème élément contient le reste.
-    elif len(phonem) > 2:
-        return [phonem[:2], phonem[2:]]
-    # si la longueur du phonème est égale à 2:
-    elif len(phonem) == 2:
-        # s'il existe dans liste_44_phonems, tu renvoies un liste qui contient uniquement le phonèmes
-        if phonem in liste_44_phonems:
-            return [phonem]
-        # s'il est composé de 2 caractères qui existent individuellement dans liste_44_phonems alors tu le split en 2 et tu retournes une liste de 2 phonèmes
-        elif phonem[0] in liste_44_phonems and phonem[1] in liste_44_phonems:
-            return [phonem[0], phonem[1]]
-        # si le 1ere élement du phonème existe dans liste_44_phonems, renvoie une liste où il y a uniquement le premier phonème 
-        elif phonem[0] in liste_44_phonems:
-            return [phonem[0]]
-    # sinon renvoie une liste vide
-    return []
 
 def phonemize_transcripts(clean_trancripts_dict, separator=Separator(phone=' ', word='/')):
     """
@@ -178,3 +107,44 @@ def phonems_transcript_to_49(phonemized_transcriptions):
     
     return processed_transcripts
 
+def handle_multi_char_phonem(phonem):
+    '''
+    méthode qui prend en entrée un phonem et qui en ressort une liste de phonems 
+    qui contiendra 1 ou plusieurs éléments.
+    Moche mais pragmatique.
+    '''
+    liste_44_phonems =  ['aɪ', 'aʊ', 'b', 'd', 'eɪ', 'f', 'h', 'i', 'iə', 'j', 'k', 'l', 'm', 'n', 'o', 'oʊ', 'p', 's', 't', 'uː', 'v', 'w', 'z', 'æ', 'ð', 'ŋ', 'ɑ', 'ɑː', 'ɔ', 'ɔɪ', 'ɔː', 'ə', 'ɚ', 'ɛ', 'ɡ', 'ɪ', 'ɹ', 'ɾ', 'ʃ', 'ʊ', 'ʊɹ', 'ʌ', 'ʒ', 'θ']
+    
+    # si la longueur du phonème est de 1, tu retournes une liste qui contient uniquement le phonème
+    if len(phonem) == 1:
+        return [phonem]
+    # si la longueur du phonème est > à 2, tu retourne une liste de 2 éléments. Le premier élement contient les 2 premiers caractères, le 2ème élément contient le reste.
+    elif len(phonem) > 2:
+        return [phonem[:2], phonem[2:]]
+    # si la longueur du phonème est égale à 2:
+    elif len(phonem) == 2:
+        # s'il existe dans liste_44_phonems, tu renvoies un liste qui contient uniquement le phonèmes
+        if phonem in liste_44_phonems:
+            return [phonem]
+        # s'il est composé de 2 caractères qui existent individuellement dans liste_44_phonems alors tu le split en 2 et tu retournes une liste de 2 phonèmes
+        elif phonem[0] in liste_44_phonems and phonem[1] in liste_44_phonems:
+            return [phonem[0], phonem[1]]
+        # si le 1ere élement du phonème existe dans liste_44_phonems, renvoie une liste où il y a uniquement le premier phonème 
+        elif phonem[0] in liste_44_phonems:
+            return [phonem[0]]
+    # sinon renvoie une liste vide
+    return []
+
+def get_padded_tokenized_transcripts(path_transcriptions_csv=PATH_LJ_CSV, path_mapping_phonem=PATH_PHONES_MAPPING_LJSPEECH):
+    transcriptions_dict = get_ljspeech_transcripts_from_metadata(path_transcriptions_csv)
+    cleaned_transcriptions_dict = get_cleaned_transcriptions(transcriptions_dict)
+    extended_phonems_dict = phonemize_transcripts(cleaned_transcriptions_dict)
+    phonemized_transcripts_dict = phonems_transcript_to_49(extended_phonems_dict)
+    tokenized_transcriptions_dict = get_tokens_from_phonems(phonemized_transcripts_dict, path_mapping_phonem)
+    
+    tokenized_transcriptions = list(tokenized_transcriptions_dict.values())
+    
+    padded_lists = pad_sequences(tokenized_transcriptions, padding='post', value=TOKEN_PADDING_VALUE)
+    padded_tokens_dict = {key: value for key, value in zip(tokenized_transcriptions_dict.keys(), padded_lists)}
+
+    return padded_tokens_dict 

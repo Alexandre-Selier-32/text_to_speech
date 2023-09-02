@@ -4,10 +4,8 @@ import soundfile as sf
 from scipy import signal
 from argparse import Namespace
 
-
-from data import get_audio_files_from_ljspeech
-from app.params import PATH_MELSPEC,SAMPLE_RATE,N_FFT,HOP_LENGTH,N_MELS
-from app.utils.preprocess_audio import get_padded_melspecs
+from app.params import *
+from app.utils import *
 
 _mel_basis = None
 
@@ -128,71 +126,27 @@ def _griffin_lim(S, hparams):
 
     return wav
 
-# def process_all_wavs_in_folder(folder_path, hparams):
-
-#     # Get all .wav files in the folder
-#     wav_files = glob.glob(os.path.join(folder_path, "*.wav"))
-
-#     for wav_file in wav_files:
-
-#         # Load waveform
-#         wav = load_wav(wav_file, hparams)
-
-#         # Convert mel spectrogram
-#         mel = melspectrogram(wav, hparams)
-
-#         # Save mel spectrogram
-#         save_path = os.path.splitext(wav_file)[0].replace('wavs','melspectrogram') + ".npy"
-#         np.save(save_path, mel)
-
-
-#def process_all_wavs_in_folder():
+def process_all_wavs_in_folder():
     all_wav_paths = get_audio_files_from_ljspeech()
+    
+    if not os.path.exists(PATH_PADDED_MELSPECS):
+        os.makedirs(PATH_PADDED_MELSPECS)
 
+    melspecs_dict = {}
     for key, value in all_wav_paths.items():
         # Load waveform
         wav = load_wav(value, hparams)
 
         # Convert mel spectrogram
         mel = melspectrogram(wav, hparams)
-
-        # build path + filename
-        file_path_and_name = f"{PATH_MELSPEC}/{key}.npy"
-
-        # Save mel spectrogram
-        np.save(file_path_and_name, mel)
-        print('Files saved successfully')
-
-#if __name__ == '__main__':
-    print(process_all_wavs_in_folder())
-
-
-def process_all_wavs_in_folder_padded():
-    all_wav_paths = get_audio_files_from_ljspeech()
-    mel_dict = dict()
-
-    for key, value in all_wav_paths.items():
-        # Load waveform
-        wav = load_wav(value, hparams)
-        # Convert mel spectrogram
-        mel = melspectrogram(wav, hparams)
-        # Lets build a dict
-        mel_dict[key] = mel
-    return mel_dict
-
-
-
-if __name__ == '__main__':
-    non_padded_dict = process_all_wavs_in_folder_padded()
-    print(non_padded_dict)
-    print(len(non_padded_dict))
-    mel_padded_dict = get_padded_melspecs(non_padded_dict)
-    print(len(mel_padded_dict))
-    print(mel_padded_dict)
-
-    for key, value in mel_padded_dict.items():
-        # build path + filename
-        file_path_and_name = f"{PATH_MELSPEC}/{key}.npy"
-        # Save mel spectrogram
+        
+        melspecs_dict[key] = mel
+    
+    padded_melspecs_dict = get_padded_melspecs_dict(melspecs_dict)
+    
+    for key, value in padded_melspecs_dict.items():
+        file_path_and_name = f"{PATH_PADDED_MELSPECS}/{key}.npy"
         np.save(file_path_and_name, value)
-    print('Files saved successfully')
+        
+    print('✅ Mel spectrograms Files saved successfully')
+    have_same_shape(PATH_PADDED_MELSPECS)

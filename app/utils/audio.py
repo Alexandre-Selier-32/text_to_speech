@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
 import librosa
 import numpy as np
-import soundfile as sf
-from app.params import SAMPLE_RATE, N_FFT, HOP_LENGTH, N_MELS
-
+from app.params import *
+    
 def display_mel_spectrogram(mel_spectrogram, sr=SAMPLE_RATE, hop_length=HOP_LENGTH):
     """
     Affiche une visualisation du mel spectrogramme 
@@ -22,28 +21,6 @@ def display_mel_spectrogram(mel_spectrogram, sr=SAMPLE_RATE, hop_length=HOP_LENG
     plt.title('Mel Spectrogram')
     plt.tight_layout()
     plt.show()
-
-def get_sample_rates(audio_files_dict):
-    """
-    Vérifie si tous les fichiers audio d'un dictionnaire ont le même taux d'échantillonnage
-
-    Parameters:
-    - audio_files_dict : Dictionnaire qui contient en key les séquence_id et en value les paths des fichiers audio
-
-    Return:
-    Le taux d’échantillonnage unique des fichiers audio ou la liste de taux d'échantillonnage.
-    """
-    
-    # Récupère les taux d'échantillonnage de tous les fichiers audio
-    sample_rates = [sf.info(audio_path).samplerate for audio_path in audio_files_dict.values()]
-    unique_sample_rates = np.unique(sample_rates)
-
-    if len(unique_sample_rates) == 1:
-        print(f"Tous les fichiers ({len(audio_files_dict)} fichiers) ont un taux d'échantillonnage de {unique_sample_rates[0]} Hz.")
-        return unique_sample_rates[0]
-    else:
-        print("Les fichiers ont des taux d'échantillonnage différents.")
-        return unique_sample_rates
 
 def waveform_to_mel_spectrogram_from_stft(audio_path, n_fft=N_FFT, hop_length=HOP_LENGTH):
     """
@@ -89,6 +66,7 @@ def waveform_to_mel_spectrogram_from_spectrum(audio_path, sr=SAMPLE_RATE, n_fft=
     
     return mel_spec
 
+
 def get_melspecs_from_audio_files(audio_files_dict, sr=SAMPLE_RATE, n_fft=N_FFT, hop_length=HOP_LENGTH, n_mels=N_MELS):
     """
     Calcule le mel spectrogramme pour chaque fichier audio
@@ -105,7 +83,19 @@ def get_melspecs_from_audio_files(audio_files_dict, sr=SAMPLE_RATE, n_fft=N_FFT,
         melspecs_dict[sequence_id] = waveform_to_mel_spectrogram_from_spectrum(audio_path, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
     
     return melspecs_dict
+
+def pad_single_melspec(mel, max_length):
+    padding = max_length - mel.shape[1]
+    if padding > 0:
+        mel = np.pad(mel, ((0, 0), (0, padding)), mode='constant', constant_values=MEL_SPEC_PADDING_VALUE)
+    return mel
+
+def get_padded_melspecs_dict(melspecs_dict):
+    melspecs_lists = list(melspecs_dict.values())
     
+    max_length = np.max([mel.shape[1] for mel in melspecs_lists])
+    padded_mels = [pad_single_melspec(mel, max_length) for mel in melspecs_lists]
     
-    
-    
+    padded_melspecs_dict = {key: value for key, value in zip(melspecs_dict.keys(), padded_mels)}
+
+    return padded_melspecs_dict
