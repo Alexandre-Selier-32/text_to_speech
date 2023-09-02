@@ -100,13 +100,8 @@ def overfit_on_sample(model, train_tokens, train_melspec, epochs=10):
     Retourne:
     - L'histoire de l'entraînement (objet contenant les erreurs d'entraînement pour chaque époque).
     """
-    
-    # Sélectionnez un petit échantillon de données
-    sample_tokens = tf.stack(train_tokens[:10])
-    sample_melspec = tf.stack(train_melspec[:10])
-
     # Entraînez le modèle uniquement sur cet échantillon
-    history = model.fit(sample_tokens, sample_melspec, epochs=epochs, verbose=1)
+    history = model.fit(train_tokens, train_melspec, epochs=epochs, verbose=1)
 
     # Visualisez l'erreur d'entraînement
     plt.plot(history.history['loss'])

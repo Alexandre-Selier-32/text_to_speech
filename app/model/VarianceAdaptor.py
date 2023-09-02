@@ -41,18 +41,22 @@ class VarianceAdaptor(layers.Layer):
         phonème peut s'étendre sur plusieurs melspec frames. On prend donc la sortie 
         de l'encodeur et on l'adapte pour prendre en compte la durée prédite pour chaque phonème.
         """
+    # Clipping des durées prédites pour éviter de trop étirer ou compresser la séquence
+        MAX_DURATION = 10  # par exemple
+        MIN_DURATION = 1  # par exemple
+        clipped_durations = tf.clip_by_value(predicted_durations, MIN_DURATION, MAX_DURATION)
+
         # conversion des durées en int pour tf.tile
-        int_durations = tf.cast(tf.round(predicted_durations), tf.int32)
-        int_durations = tf.squeeze(int_durations, axis=-1)  # on enlève la derniere dimensions car predicted_durations est un tenseur 3D
-            
-        # expansion des dimensions
+        int_durations = tf.cast(tf.round(clipped_durations), tf.int32)
+        int_durations = tf.squeeze(int_durations, axis=-1)  # on enlève la dernière dimension car predicted_durations est un tenseur 3D
+                        
         expanded_output = []
         for i in range(tf.shape(encoder_output)[0]):
             expanded_segment = tf.repeat(encoder_output[i], int_durations[i], axis=0)
             expanded_output.append(expanded_segment)
-        
-        # Determine the max length after expansion
+                        
         max_length = max([tf.shape(segment)[0] for segment in expanded_output])
+        
         
         # Pad each sequence to have the same length
         for i in range(len(expanded_output)):
@@ -63,4 +67,28 @@ class VarianceAdaptor(layers.Layer):
         # Stack all the expanded and padded sequences
         reshaped_output = tf.stack(expanded_output, axis=0)
         
+        # Calculate the target length based on the clipped durations
+        target_length = tf.reduce_sum(int_durations, axis=1, keepdims=True)
+        max_target_length = tf.reduce_max(target_length)
+
+        # If the length of reshaped_output is different from the target length, add padding
+        current_length = tf.shape(reshaped_output)[1]
+        padding_amount = max_target_length - current_length
+
+        # Ensure the padding amount is not negative
+        padding_amount = tf.maximum(padding_amount, 0)
+
+        padding_shape = [tf.shape(reshaped_output)[0], padding_amount, encoder_output.shape[-1]]
+        padding = tf.zeros(padding_shape, dtype=tf.float32)
+
+        reshaped_output = tf.concat([reshaped_output, padding], axis=1)
+
+        # Ensure the final length of the sequences matches with the second dimension of the target tensors
+        reshaped_output = reshaped_output[:, :80, :]
+
         return reshaped_output
+
+
+
+
+
