@@ -87,7 +87,19 @@ def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epo
 
     return history
 
-def overfit_on_sample(model, train_tokens, train_melspec, epochs=10):
+
+def predict_melspec(model, input_tokens):
+    input_tokens = tf.expand_dims(input_tokens, 0)  # Add batch dimension
+    input_tokens = tf.convert_to_tensor(input_tokens, dtype=tf.int32)
+    prediction = model.predict(input_tokens)
+    return prediction
+
+def evaluate_model(model, test_tokens, test_melspec):
+    loss = model.evaluate(test_tokens, test_melspec)
+    return loss
+
+
+def overfit_on_sample(model, train_tokens, train_melspec, epochs=5):
     """
     Overfit le modèle sur un petit échantillon de données pour tester si le modèle est capable de mémoriser cet échantillon.
     

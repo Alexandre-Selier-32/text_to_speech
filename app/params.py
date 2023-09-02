@@ -1,4 +1,6 @@
 import os
+from argparse import Namespace
+
 
 LOCAL_DATA_PATH =  os.path.dirname(os.path.dirname(__file__))
 
@@ -23,4 +25,3 @@ SAMPLE_RATE=22050
 N_FFT=1024
 HOP_LENGTH=256
 N_MELS=80
-
