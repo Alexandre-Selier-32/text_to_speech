@@ -57,7 +57,7 @@ class Transformer(Model):
         """
         Crée un masque de padding pour la séquence de tokens.
 
-        Les emplacements dans la séquence de tokens où le token est égal à la valeur de TOKEN_PADDING_VALUE (-10)
+        Les emplacements dans la séquence de tokens où le token est égal à la valeur de TOKEN_PADDING_VALUE
         auront une valeur de 1 dans le masque, les autres auront une valeur de 0.
 
         Params:

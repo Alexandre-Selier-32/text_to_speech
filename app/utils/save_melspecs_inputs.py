@@ -145,7 +145,7 @@ def process_all_wavs_in_folder():
     padded_melspecs_dict = get_padded_melspecs_dict(melspecs_dict)
     
     for key, value in padded_melspecs_dict.items():
-        file_path_and_name = f"{PATH_PADDED_MELSPECS}/{key}.npy"
+        file_path_and_name = f"{PATH_PADDED_MELSPECS}/{key}_melspecs.npy"
         np.save(file_path_and_name, value)
         
     print('✅ Mel spectrograms Files saved successfully')
