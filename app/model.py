@@ -2,6 +2,7 @@ import os
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.callbacks import ModelCheckpoint
 from app.model.Transformer import Transformer
 from app.model.CustomLearningRateScheduler import CustomLearningRateScheduler
 from app.params import *
@@ -21,7 +22,7 @@ def get_test_train_val_split():
     
     assert tokens_data_dict.keys() == melspec_data_dict.keys()
 
-    # Check qu'on fait bien correspondre les bons tokens aux bon melspecs
+    # Pour s'assurer qu'on fait bien correspondre les bons tokens aux bon melspecs
     sequence_ids = list(tokens_data_dict.keys())
     tokens_data = [tokens_data_dict[seq_id] for seq_id in sequence_ids]
     melspec_data = [melspec_data_dict[seq_id] for seq_id in sequence_ids]
@@ -35,14 +36,14 @@ def get_test_train_val_split():
 
 def initialize_model(config):
     model = Transformer(
-        num_layers=config.num_layers,
-        embedding_dim=config.embedding_dim,
-        num_heads=config.num_heads,
-        dff=config.dff,
+        num_layers=config.num_layers, 
+        embedding_dim=config.embedding_dim, 
+        num_heads=config.num_heads, 
+        dff=config.dff, 
         input_vocab_size=config.input_vocab_size,
-        max_position_encoding=config.max_position_encoding,
-        conv_kernel_size=config.conv_kernel_size,
-        conv_filters=config.conv_filters,
+        max_position_encoding=config.max_position_encoding, 
+        conv_kernel_size=config.conv_kernel_size, 
+        conv_filters=config.conv_filters, 
         rate=config.rate
     )
     return model
@@ -54,6 +55,21 @@ def compile_model(model, config):
     model.compile(optimizer=optimizer, loss='mean_squared_error')
 
 
-def train_model(model, train_dataset, val_dataset):
-    model.fit(train_dataset, validation_data=val_dataset, epochs=10)
-    
+def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=10):
+    checkpoint_callback = ModelCheckpoint(
+        filepath=PATH_MODEL_PARAMS + "/checkpoint_{epoch}",
+        save_weights_only=True,
+        save_best_only=True,
+        monitor="val_loss",
+        verbose=1,
+    )
+
+    history = model.fit(
+        x=train_tokens, 
+        y=train_melspec,
+        validation_data=(val_tokens, val_melspec),
+        epochs=epochs,
+        callbacks=[checkpoint_callback]
+    )
+
+    return history

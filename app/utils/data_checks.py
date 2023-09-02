@@ -68,15 +68,16 @@ def have_same_sample_rate(input_data):
         assert False, "Not all audio files have the same sample rate."
         return False
     
-def model_returns_the_right_shape(model, train_tokens, batch_size):
+def model_returns_the_right_shape(model, train_tokens):
+    batch_size_for_test = 10
     tokens_seq_len = len(train_tokens[0])
-    sample_tokens = tf.stack(train_tokens[:batch_size])
+    sample_tokens = tf.stack(train_tokens[:batch_size_for_test])
     
     predictions = model(sample_tokens)    
 
-    assert predictions.shape == (batch_size, tokens_seq_len, N_MELS), \
-        f"Wrong shape of predictions, we should have {(batch_size, tokens_seq_len, N_MELS)} \
-            with {batch_size} = batch_size, {tokens_seq_len} = length of a sequence of tokens, {N_MELS} = number of filter banks"
+    assert predictions.shape == (batch_size_for_test, tokens_seq_len, N_MELS), \
+        f"Wrong shape of predictions, we should have {(batch_size_for_test, tokens_seq_len, N_MELS)} \
+            with {batch_size_for_test} = batch_size, {tokens_seq_len} = length of a sequence of tokens, {N_MELS} = number of filter banks"
 
     print("✅ Right shape of predictions:", predictions.shape)
 
