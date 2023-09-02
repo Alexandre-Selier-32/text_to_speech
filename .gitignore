@@ -1,6 +1,8 @@
 # Project Dir
 drafts/*
 raw_data/*
+processed_data/melspectrograms
+processed_data/tokens
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -47,5 +49,3 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
-processed_data/melspectrogram
