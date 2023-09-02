@@ -2,7 +2,7 @@ import tensorflow as tf
 from app.model.Config import Config
 from app.params import N_MELS
 from app.model.Attention import Attention
-from app.model.VariancePredictor import VariancePredictor
+from app.model.VarianceAdaptor import VarianceAdaptor
 from app.model.Encoder import Encoder
 from app.model.Decoder import Decoder
 from app.model.MultiHeadAttention import MultiHeadAttention
@@ -70,7 +70,7 @@ print(decoder_output.shape)
 assert decoder_output.shape == in_out_shape_req
 
 # TEST DE LA CLASSE VARIANCE PREDICTOR
-variance_predictor = VariancePredictor(embedding_dim= config.embedding_dim, conv_kernel_size=config.var_conv_kernel_size,
+variance_predictor = VarianceAdaptor(embedding_dim= config.embedding_dim, conv_kernel_size=config.var_conv_kernel_size,
                                     conv_filters=config.var_conv_filters, rate=config.var_rate)
 
 var_input = tf.random.uniform(in_out_shape_req)

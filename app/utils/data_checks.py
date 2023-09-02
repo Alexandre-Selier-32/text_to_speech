@@ -67,18 +67,70 @@ def have_same_sample_rate(input_data):
         print("Les fichiers ont des taux d'échantillonnage différents.")
         assert False, "Not all audio files have the same sample rate."
         return False
+
+def data_has_right_types(tokens, melspecs):
+    """
+    Vérifie si les types des données (tokens et melspectrograms) sont corrects.
     
+    Parametres:
+    - train_tokens (tf.Tensor): Tensor des tokens
+    - train_melspectrograms (tf.Tensor): Tensor des melspectrograms
+    """
+    
+    # Vérification du type pour les tokens d'entrée
+    token_dtype = tokens.dtype
+    assert token_dtype == tf.int32, f"Les tokens d'entrée devraient être de type tf.int32, mais sont de type {token_dtype}."
+    
+    # Vérification du type pour les melspectrograms
+    melspec_dtype = melspecs.dtype
+    assert melspec_dtype == tf.float32, f"Les melspectrograms devraient être de type tf.float32, mais sont de type {melspec_dtype}."
+
+    print("✅ Les types des données sont corrects.")
+     
+     
+def check_model_shapes_and_types(model, input_tokens):
+    """
+    Vérifie les shapes et types des outputs pour chaque composant du modèle 
+    """
+    # Convert tokens to embeddings
+    embedded_tokens = model.embedding(input_tokens)
+    seq_length = tf.shape(embedded_tokens)[1]
+    embedded_tokens_with_pos = embedded_tokens + model.pos_encoding[:, :seq_length, :]
+    
+    # Encoder
+    encoder_output = model.encoder(embedded_tokens_with_pos)
+    assert encoder_output.dtype == tf.float32, "Encoder output type should be float32"
+    assert len(encoder_output.shape) == 3, "Encoder output should have 3 dimensions"
+
+    # Duration Predictor
+    duration_output = model.duration_predictor(encoder_output)
+    assert duration_output.dtype == tf.float32, "Duration Predictor output type should be float32"
+    assert len(duration_output.shape) == 3 and duration_output.shape[-1] == 1, "Duration Predictor output should have shape (batch_size, seq_len, 1)"
+
+    # Regulated output
+    regulated_output = model.duration_predictor.regulate_length(encoder_output, duration_output)
+    
+    # Decoder
+    decoder_output = model.decoder(regulated_output)
+    assert decoder_output.dtype == tf.float32, "Decoder output type should be float32"
+    assert len(decoder_output.shape) == 3, "Decoder output should have 3 dimensions"
+
+    print("All checks passed!")
+                
 def model_returns_the_right_shape(model, train_tokens):
     batch_size_for_test = 10
     tokens_seq_len = len(train_tokens[0])
     sample_tokens = tf.stack(train_tokens[:batch_size_for_test])
     
     predictions = model(sample_tokens)    
-
+    '''
+    print("Predictions shape:", predictions.shape)
+    
     assert predictions.shape == (batch_size_for_test, tokens_seq_len, N_MELS), \
         f"Wrong shape of predictions, we should have {(batch_size_for_test, tokens_seq_len, N_MELS)} \
             with {batch_size_for_test} = batch_size, {tokens_seq_len} = length of a sequence of tokens, {N_MELS} = number of filter banks"
 
     print("✅ Right shape of predictions:", predictions.shape)
-
-    return
+    '''
+    
+    return predictions

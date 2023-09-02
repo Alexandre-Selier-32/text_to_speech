@@ -3,12 +3,14 @@ import tensorflow as tf
 import numpy as np
 from app.model.Encoder import Encoder
 from app.model.Decoder import Decoder
-from app.model.VariancePredictor import VariancePredictor
+from app.model.VarianceAdaptor import VarianceAdaptor
 from app.params import TOKEN_PADDING_VALUE, N_MELS
 
 class Transformer(Model):
     def __init__(self, num_layers, embedding_dim, num_heads, dff, input_vocab_size,
-                 max_position_encoding, conv_kernel_size, conv_filters, rate):
+                 max_position_encoding, conv_kernel_size, conv_filters, rate, 
+                 var_conv_filters, var_conv_kernel_size, var_rate):
+        
         super().__init__()
         
         self.embedding = layers.Embedding(input_vocab_size, embedding_dim)
@@ -20,34 +22,42 @@ class Transformer(Model):
         self.encoder = Encoder(num_layers, embedding_dim, num_heads, dff, 
                                conv_kernel_size, conv_filters, rate)
         
-        
-        # TODO Energy and Pitch predictors         
 
+        self.duration_predictor = VarianceAdaptor(embedding_dim, var_conv_filters, 
+                                                    var_conv_kernel_size, var_rate)
+        
         '''
-        self.duration_predictor = VariancePredictor(embedding_dim, conv_filters, 
-                                                    conv_kernel_size,
-                                                    num_layers, 
-                                                    rate)
+        self.energy_predictor = VarianceAdaptor(embedding_dim, var_conv_filters, 
+                                                  var_conv_kernel_size, var_rate)
+        self.pitch_predictor = VarianceAdaptor(embedding_dim, var_conv_filters, 
+                                                 var_conv_kernel_size, var_rate)
         '''
         
         self.decoder = Decoder(num_layers, embedding_dim, num_heads, dff, 
                                conv_kernel_size, conv_filters, rate)
+                               
         
-        self.final_layer = layers.Dense(N_MELS)
+        self.final_layer = layers.Dense(870)
 
 
-    def call(self, input): 
-        embedding_output = self.embedding(input) 
+    def call(self, phoneme_tokens_input): 
+        embedding_output = self.embedding(phoneme_tokens_input) 
         masked_embedding_output = self.padding_mask(embedding_output)
         seq_length = tf.shape(masked_embedding_output)[1]
         
         embedding_and_pos_output = masked_embedding_output + self.pos_encoding[:, :seq_length, :]
                 
         encoder_output = self.encoder(embedding_and_pos_output)  
-        
-        #predicted_duration = self.duration_predictor(encoder_output)
 
-        decoder_output = self.decoder(encoder_output) 
+        #### VARIANCE ADAPTOR DEBUT 
+        duration_output = self.duration_predictor(encoder_output)
+        
+        # Régule la longueur des phoneme_tokens en utilisant les durées prédites.
+        regulated_output = self.duration_predictor.regulate_length(encoder_output, duration_output)
+        
+        #### VARIANCE ADAPTOR FIN 
+
+        decoder_output = self.decoder(regulated_output) 
         
         model_output = self.final_layer(decoder_output) 
 
