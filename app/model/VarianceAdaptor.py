@@ -42,8 +42,6 @@ class VarianceAdaptor(layers.Layer):
         de l'encodeur et on l'adapte pour prendre en compte la durée prédite pour chaque phonème.
         """
     # Clipping des durées prédites pour éviter de trop étirer ou compresser la séquence
-        MAX_DURATION = 10  # par exemple
-        MIN_DURATION = 1  # par exemple
         clipped_durations = tf.clip_by_value(predicted_durations, MIN_DURATION, MAX_DURATION)
 
         # conversion des durées en int pour tf.tile
@@ -87,8 +85,3 @@ class VarianceAdaptor(layers.Layer):
         reshaped_output = reshaped_output[:, :80, :]
 
         return reshaped_output
-
-
-
-
-

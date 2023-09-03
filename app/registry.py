@@ -42,6 +42,8 @@ def get_test_train_val_split(batch_size):
     
     tokens_test = tf.convert_to_tensor(tokens_test, dtype=tf.int32)
     melspec_test = tf.convert_to_tensor(melspec_test, dtype=tf.float32)
+    
+    print('tokens_train 0', tokens_train)
 
     return (tokens_train, melspec_train), (tokens_val, melspec_val), (tokens_test, melspec_test)
 
@@ -68,7 +70,7 @@ def compile_model(model, config):
 
     model.compile(optimizer=optimizer, loss='mean_squared_error')
 
-def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=10):
+def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=100):
     checkpoint_callback = ModelCheckpoint(
         filepath=PATH_MODEL_PARAMS + "/checkpoint_{epoch}",
         save_weights_only=True,
@@ -82,9 +84,17 @@ def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epo
         y=train_melspec,
         validation_data=(val_tokens, val_melspec),
         epochs=epochs,
-        callbacks=[checkpoint_callback]
+       #callbacks=[checkpoint_callback]
     )
 
+    # Visualisez l'erreur d'entraînement
+    plt.plot(history.history['loss'])
+    plt.title('Model Loss Over Time')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train'], loc='upper right')
+    plt.show()
+    
     return history
 
 
@@ -99,7 +109,7 @@ def evaluate_model(model, test_tokens, test_melspec):
     return loss
 
 
-def overfit_on_sample(model, train_tokens, train_melspec, epochs=5):
+def overfit_on_sample(model, train_tokens, train_melspec, epochs=30):
     """
     Overfit le modèle sur un petit échantillon de données pour tester si le modèle est capable de mémoriser cet échantillon.
     

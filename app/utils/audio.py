@@ -2,7 +2,11 @@ import matplotlib.pyplot as plt
 import librosa
 import numpy as np
 from app.params import *
-    
+from speechbrain.pretrained import HIFIGAN
+import torch
+import IPython
+
+
 def display_mel_spectrogram(mel_spectrogram, sr=SAMPLE_RATE, hop_length=HOP_LENGTH):
     """
     Affiche une visualisation du mel spectrogramme 
@@ -99,3 +103,15 @@ def get_padded_melspecs_dict(melspecs_dict):
     padded_melspecs_dict = {key: value for key, value in zip(melspecs_dict.keys(), padded_mels)}
 
     return padded_melspecs_dict
+
+
+def listen_to_audio(melspec): 
+    hifi_gan = HIFIGAN.from_hparams(source="speechbrain/tts-hifigan-ljspeech", savedir="tmpdir")
+    melspec_tensor = torch.tensor(melspec).float()
+    
+    if next(hifi_gan.parameters()).is_cuda:
+        melspec_tensor = melspec_tensor.cuda()
+    
+    waveforms = hifi_gan.decode_batch(melspec_tensor)
+
+    return IPython.display.Audio(waveforms, rate=SAMPLE_RATE)
