@@ -4,14 +4,14 @@ import numpy as np
 from app.model.Encoder import Encoder
 from app.model.Decoder import Decoder
 from app.model.VarianceAdaptor import VarianceAdaptor
-from app.params import TOKEN_PADDING_VALUE, N_MELS
+from app.params import *
 
 class Transformer(Model):
     def __init__(self, num_layers, embedding_dim, num_heads, dff, input_vocab_size,
                  max_position_encoding, conv_kernel_size, conv_filters, rate, 
                  var_conv_filters, var_conv_kernel_size, var_rate):
         
-        super(Transformer).__init__()
+        super().__init__()
         
         self.embedding = layers.Embedding(input_vocab_size, embedding_dim)
         
@@ -26,6 +26,9 @@ class Transformer(Model):
         self.duration_predictor = VarianceAdaptor(embedding_dim, var_conv_filters, 
                                                     var_conv_kernel_size, var_rate)
         
+        self.duration_embedding = layers.Embedding(MAX_DURATION, embedding_dim)
+
+        
         '''
         self.energy_predictor = VarianceAdaptor(embedding_dim, var_conv_filters, 
                                                   var_conv_kernel_size, var_rate)
@@ -38,15 +41,15 @@ class Transformer(Model):
                                
         
         self.final_layer = layers.Dense(870)
-
-
+    
     def call(self, phoneme_tokens_input): 
-        tf.config.run_functions_eagerly(True)
-
+        print("Phoneme Tokens Input:", phoneme_tokens_input)
+        
         embedding_output = self.embedding(phoneme_tokens_input) 
-        #print("Shape after embedding:", embedding_output.shape)
-        emb_dim = tf.shape(embedding_output)[2] # Get the embedding dimension dynamically
-        tokens_seq_len = tf.shape(embedding_output)[1] # Get the sequence length dynamically
+        emb_dim = tf.shape(embedding_output)[2]
+        tokens_seq_len = tf.shape(embedding_output)[1]
+        
+        print("embedding output:", embedding_output)
 
         assert embedding_output.shape[1:] == (tokens_seq_len, emb_dim) # check des 2 dernières dim
 
@@ -87,6 +90,7 @@ class Transformer(Model):
 
         return model_output
 
+
     def create_tokens_padding_mask(self, input):
         """
         Crée un masque de padding pour la séquence de tokens.
@@ -103,6 +107,7 @@ class Transformer(Model):
         tokens_seq = input
         tokens_seq = tf.cast(tf.math.equal(tokens_seq, TOKEN_PADDING_VALUE), tf.float32)
         return tokens_seq
+
 
     def positional_encoding(self, position, embedding_dim):
         def get_angles(pos, i, embedding_dim):
