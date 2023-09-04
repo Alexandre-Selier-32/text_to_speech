@@ -9,5 +9,5 @@ run_create_inputs:
 	python -c 'from app.utils import process_all_wavs_in_folder; process_all_wavs_in_folder()'
 	
 run_pipeline:
-	python -c 'from app.registry import run_pipeline; run_pipeline()'
+	python -c 'from app.main import run_pipeline; run_pipeline()'
 

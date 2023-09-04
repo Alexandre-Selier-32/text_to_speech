@@ -5,47 +5,11 @@ import tensorflow as tf
 import time
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras import models
 
-from keras import optimizers
 from app.model import *
 from app.params import *
 import matplotlib.pyplot as plt
 
-
-
-def run_pipeline():
-    config = Config()
-    # Load data
-    train_dataset, val_dataset, test_dataset = get_test_train_val_split()
-
-    latest_model_path = get_latest_model_path()
-    
-    if latest_model_path:
-        model = load_model(latest_model_path)
-        print(f'[LOAD MODEL]: ✅ Model loaded from last training ({latest_model_path})')
-    else:
-        # Initialize the model
-        model = initialize_model(config)
-        print('[LOAD MODEL]: No previous model saved. Training from scratch')
-
-    # Compile the model
-    compile_model(model, config)
-    print('[COMPILE MODEL]:  ✅ Model Compiled')
-
-    print('[TRAIN MODEL]: ✅ Model Training starting...')
-    # Train the model
-    history = train_model(model, train_dataset, val_dataset)
-    print('[TRAIN MODEL]: ✅ Model Training completed !')
-
-    save_model(model)
-    print(f'[SAVE MODEL]: ✅ Model saved to in {PATH_FULL_MODEL}')
-
-    # Evaluate the model
-    loss = evaluate_model(model, test_dataset)
-    print(f"[EVALUATE MODEL] Model loss on test data: {loss}")
-    
-    return model, history
 
 def get_latest_model_path():
     local_model_paths = glob.glob(f"{PATH_FULL_MODEL}/*")
@@ -70,7 +34,7 @@ def create_tensorflow_dataset(tokens, melspecs, batch_size):
     dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
     return dataset
 
-def get_test_train_val_split():
+def get_test_train_val_split(data_fraction=1.0):
     tokens_data_dict = load_data_from_directory(PATH_PADDED_TOKENS, "tokens")
     melspec_data_dict = load_data_from_directory(PATH_PADDED_MELSPECS, "melspecs")
     
@@ -78,6 +42,9 @@ def get_test_train_val_split():
 
     # Pour s'assurer qu'on fait bien correspondre les bons tokens aux bon melspecs
     sequence_ids = list(tokens_data_dict.keys())
+    num_samples = int(len(sequence_ids) * data_fraction)
+    sequence_ids = sequence_ids[:num_samples] 
+    
     tokens_data = [tokens_data_dict[seq_id] for seq_id in sequence_ids]
     melspec_data = [melspec_data_dict[seq_id] for seq_id in sequence_ids]
 
@@ -128,7 +95,7 @@ def compile_model(model, config):
     
     model.compile(optimizer=optimizer, loss=tf.keras.losses.MeanAbsoluteError())
 
-def train_model(model, train_dataset, val_dataset, epochs=N_EPOCHS):
+def train_model(model, train_dataset, val_dataset, epochs):
     
     checkpoint_path = f"{PATH_MODEL_CHECKPOINTS}/model_at_epoch_{{epoch:02d}}.ckpt"
 
@@ -137,13 +104,13 @@ def train_model(model, train_dataset, val_dataset, epochs=N_EPOCHS):
         monitor="val_loss",  
         save_best_only=True,   
         save_weights_only=True,
-        save_freq=300,
+        save_freq='epoch',
         verbose=1
     )
     
     es_callback = EarlyStopping(
         monitor="val_loss",
-        patience=30,
+        patience=20,
         restore_best_weights=True,
         verbose=1
     )
@@ -165,19 +132,23 @@ def train_model(model, train_dataset, val_dataset, epochs=N_EPOCHS):
     
     return history
 
-def save_model(model):
+def save_model_in_saved_models(model):
     """
-    Saves the entire model to the specified path.
+    Saves the entire model to the specified path using tf.keras.
     """
-    # Save the model structure + weights + optimizer
-    model_path = f"{PATH_FULL_MODEL}/model_{int(time.time())}"  # Using timestamp to create a unique name
-    model.save(model_path)
+    # Determine the path where the model will be saved
+    model_path = f"{PATH_FULL_MODEL}/model_{int(time.time())}"
+    
+    # Use tf.keras.models.save_model to save the model
+    tf.keras.models.save_model(model, model_path)
 
-def load_model(model_path):
+    print(f"Model saved at {model_path}")
+
+def load_model_fom_saved_models(model_path):
     """
     Loads the entire model from the specified path.
     """
-    model = models.load_model(model_path)
+    model = tf.keras.models.load_model(model_path)
     return model
 
 def predict_melspec(model, input_tokens):
