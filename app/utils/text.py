@@ -183,36 +183,15 @@ def get_padded_tokenized_transcripts(path_transcriptions_csv=PATH_LJ_CSV, path_m
     return padded_tokens_dict 
 
 
-#######
-#TESTS
-def phonems_49_to_transcript(phonem_list):
-    """
-    Convertit une liste de phonèmes à 49 éléments en une transcription étendue.
-
-    Paramètres:
-    - phonem_list: Une liste de phonèmes.
-
-    Retour:
-    - extended_transcript: Une chaîne de transcription étendue.
-    """
-
-    extended_list = []
-    i = 0
-    while i < len(phonem_list):
-        phonem = phonem_list[i]
-        # Si le phonème est un des phonèmes à deux caractères
-        if phonem in ['aɪ', 'aʊ', 'eɪ', 'iə', 'oʊ', 'uː', 'ɑː', 'ɔɪ', 'ɔː', 'ɚ', 'ʊɹ']:
-            extended_list.append(phonem)
-            i += 1
-        # Si le phonème suivant est aussi dans la liste, alors ils étaient probablement scindés
-        elif i < len(phonem_list) - 1 and phonem + phonem_list[i+1] in ['aɪ', 'aʊ', 'eɪ', 'iə', 'oʊ', 'uː', 'ɑː', 'ɔɪ', 'ɔː', 'ɚ', 'ʊɹ']:
-            extended_list.append(phonem + phonem_list[i+1])
-            i += 2
-        else:
-            extended_list.append(phonem)
-            i += 1
-
-    # Convertir la liste étendue en une chaîne
-    extended_transcript = ' '.join(extended_list)
-
-    return extended_transcript
+def get_input_sample(index):
+    files = sorted(os.listdir(PATH_PADDED_TOKENS))
+    
+    if index < 0 or index >= len(files):
+        raise ValueError("Index out of range.")
+    
+    file_path = os.path.join(PATH_PADDED_TOKENS, files[index])
+    key = files[index].strip("_tokens.npy")
+    
+    seq_tokens = np.load(file_path)
+    
+    return {key: seq_tokens}
