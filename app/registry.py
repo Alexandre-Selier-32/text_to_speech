@@ -18,13 +18,18 @@ def get_latest_model_path():
     path_to_load_from = sorted(local_model_paths, key=os.path.getmtime)[-1]
     return path_to_load_from
     
-def load_data_from_directory(path, suffix):
+def load_data_from_directory(path, suffix, data_fraction):
     data_dict = {}
-    for file_name in os.listdir(path):
+
+    sorted_files = sorted(os.listdir(path))
+    num_files_to_load = int(len(sorted_files) * data_fraction)
+
+    for file_name in sorted_files[:num_files_to_load]:
         if file_name.endswith(".npy") and suffix in file_name:
             sequence_id = file_name.split(f"_{suffix}")[0]
             file_path = os.path.join(path, file_name)
             data_dict[sequence_id] = np.load(file_path)
+
     return data_dict
 
 def create_tensorflow_dataset(tokens, melspecs, batch_size):
@@ -35,8 +40,8 @@ def create_tensorflow_dataset(tokens, melspecs, batch_size):
     return dataset
 
 def get_test_train_val_split(data_fraction=1.0):
-    tokens_data_dict = load_data_from_directory(PATH_PADDED_TOKENS, "tokens")
-    melspec_data_dict = load_data_from_directory(PATH_PADDED_MELSPECS, "melspecs")
+    tokens_data_dict = load_data_from_directory(PATH_PADDED_TOKENS, "tokens", data_fraction)
+    melspec_data_dict = load_data_from_directory(PATH_PADDED_MELSPECS, "melspecs", data_fraction)
     
     assert tokens_data_dict.keys() == melspec_data_dict.keys()
 
