@@ -2,11 +2,10 @@ import os
 import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.callbacks import ModelCheckpoint
-from app.model.Transformer import Transformer
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.losses import MeanAbsoluteError
 from keras import optimizers
-
-from app.model.CustomLearningRateScheduler import CustomLearningRateScheduler
+from app.model import *
 from app.params import *
 import matplotlib.pyplot as plt
 
@@ -24,6 +23,7 @@ def get_test_train_val_split(batch_size):
     melspec_data_dict = load_data_from_directory(PATH_PADDED_MELSPECS, "melspecs")
     
     assert tokens_data_dict.keys() == melspec_data_dict.keys()
+    print("CREATION TEST TRAIN VAL SPLIT OK")
 
     # Pour s'assurer qu'on fait bien correspondre les bons tokens aux bon melspecs
     sequence_ids = list(tokens_data_dict.keys())
@@ -66,22 +66,35 @@ def initialize_model(config):
     )
     return model
 
-def compile_model(model, config):
-    optimizer = optimizers.Adam(learning_rate=config.rate)
-    model.compile(loss="mean_squared_error", optimizer=optimizer, metrics=["mae"])
-    #lr_schedule = CustomLearningRateScheduler(embedding_dim=config.embedding_dim, warmup_steps=config.warmup_steps)
-    #optimizer = tf.keras.optimizers.Adam(lr_schedule, beta_1=config.beta_1, beta_2=config.beta_1, epsilon=config.epsilon)
+def masked_mse_loss(y_true, y_pred):
+    mask = tf.math.logical_not(tf.math.equal(y_true, MEL_SPEC_PADDING_VALUE))
+    loss = tf.square(tf.subtract(y_pred, y_true))
+    mask = tf.cast(mask, dtype=loss.dtype)
+    loss *= mask
+    
+    return tf.reduce_sum(loss) / tf.reduce_sum(mask)
 
-    #model.compile(optimizer=optimizer, loss='mean_squared_error')
+def compile_model(model, config):    
+    lr_schedule = CustomLearningRateScheduler(embedding_dim=config.embedding_dim, warmup_steps=config.warmup_steps)
+    optimizer = tf.keras.optimizers.Adam(lr_schedule, beta_1=config.beta_1, beta_2=config.beta_1, epsilon=config.epsilon)
+    
+    model.compile(optimizer=optimizer, loss=masked_mse_loss)
 
-def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=150):
+def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=N_EPOCHS, batch_size=BATCH_SIZE):
     checkpoint_callback = ModelCheckpoint(
         filepath=PATH_MODEL_PARAMS + "/checkpoint",
-        monitor="val_loss",  # Replace with your chosen metric
+        monitor="val_loss",  
         save_best_only=True,
         save_weights_only=True,
         mode="auto",
         save_freq="epoch"
+    )
+    
+    es_callback = EarlyStopping(
+        monitor="val_loss",
+        patience=15,
+        restore_best_weights=True,
+        verbose=1
     )
 
     history = model.fit(
@@ -89,7 +102,8 @@ def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epo
         y=train_melspec,
         validation_data=(val_tokens, val_melspec),
         epochs=epochs,
-        callbacks=[checkpoint_callback]
+        batch_size= BATCH_SIZE,
+        callbacks=[es_callback, checkpoint_callback]
     )
     # Visualisez l'erreur d'entraînement
     plt.plot(history.history['loss'])

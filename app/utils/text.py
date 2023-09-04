@@ -30,6 +30,39 @@ def get_tokens_from_phonems(phonemized_transcripts_dict, mapping_file):
         
     return tokens_dict
 
+
+def get_phonems_from_tokens(tokens_list, mapping_file=PATH_PHONES_MAPPING_LJSPEECH):
+    """
+    Convertit une liste de tokens en une liste de phonèmes.
+    
+    Parameters:
+    - tokens_list : Liste de tokens à convertir.
+    - mapping_file : Chemin vers le fichier JSON contenant le mapping des phonèmes en tokens.
+    
+    Retour:
+    - phonems_list: Liste des phonèmes correspondants aux tokens.
+    """
+    # Charger le mapping à partir du fichier JSON
+    with open(mapping_file, 'r') as file:
+        phoneme_mapping = json.load(file)
+    
+    # Convertir les séquences d'échappement Unicode en caractères réels
+    phoneme_mapping = {key.encode('utf-8').decode('unicode_escape'): value for key, value in phoneme_mapping.items()}
+    
+    # Inverser le mapping pour obtenir token -> phonème
+    inverted_mapping = {int(value): key for key, value in phoneme_mapping.items()}
+    
+    # Convertir les tokens en phonèmes
+    phonems_list = [inverted_mapping[token] for token in tokens_list if token in inverted_mapping]
+    
+    # Gérer le cas où un token n'est pas trouvé dans le mapping
+    if len(phonems_list) != len(tokens_list):
+        missing_tokens = [token for token in tokens_list if token not in inverted_mapping]
+        raise ValueError(f"Certains tokens n'ont pas été trouvés dans le mapping: {missing_tokens}")
+
+    return phonems_list
+
+
 def get_cleaned_transcriptions(transcriptions_dict):
     """
     Clean les transcriptions pour pouvoir les processer
@@ -148,3 +181,38 @@ def get_padded_tokenized_transcripts(path_transcriptions_csv=PATH_LJ_CSV, path_m
     padded_tokens_dict = {key: value for key, value in zip(tokenized_transcriptions_dict.keys(), padded_lists)}
 
     return padded_tokens_dict 
+
+
+#######
+#TESTS
+def phonems_49_to_transcript(phonem_list):
+    """
+    Convertit une liste de phonèmes à 49 éléments en une transcription étendue.
+
+    Paramètres:
+    - phonem_list: Une liste de phonèmes.
+
+    Retour:
+    - extended_transcript: Une chaîne de transcription étendue.
+    """
+
+    extended_list = []
+    i = 0
+    while i < len(phonem_list):
+        phonem = phonem_list[i]
+        # Si le phonème est un des phonèmes à deux caractères
+        if phonem in ['aɪ', 'aʊ', 'eɪ', 'iə', 'oʊ', 'uː', 'ɑː', 'ɔɪ', 'ɔː', 'ɚ', 'ʊɹ']:
+            extended_list.append(phonem)
+            i += 1
+        # Si le phonème suivant est aussi dans la liste, alors ils étaient probablement scindés
+        elif i < len(phonem_list) - 1 and phonem + phonem_list[i+1] in ['aɪ', 'aʊ', 'eɪ', 'iə', 'oʊ', 'uː', 'ɑː', 'ɔɪ', 'ɔː', 'ɚ', 'ʊɹ']:
+            extended_list.append(phonem + phonem_list[i+1])
+            i += 2
+        else:
+            extended_list.append(phonem)
+            i += 1
+
+    # Convertir la liste étendue en une chaîne
+    extended_transcript = ' '.join(extended_list)
+
+    return extended_transcript
