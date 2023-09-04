@@ -49,6 +49,10 @@ def get_test_train_val_split(batch_size):
 
     return (tokens_train, melspec_train), (tokens_val, melspec_val), (tokens_test, melspec_test)
 
+def get_config(): 
+    config = Config()
+    return config
+
 def initialize_model(config):
     model = Transformer(
         num_layers=config.num_layers, 
@@ -80,7 +84,7 @@ def compile_model(model, config):
     
     model.compile(optimizer=optimizer, loss=masked_mse_loss)
 
-def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=N_EPOCHS, batch_size=BATCH_SIZE):
+def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=N_EPOCHS):
     checkpoint_callback = ModelCheckpoint(
         filepath=PATH_MODEL_PARAMS + "/checkpoint",
         monitor="val_loss",  

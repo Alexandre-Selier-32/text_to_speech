@@ -47,7 +47,7 @@ class Transformer(Model):
         encoder_output = self.encoder(embedding_and_pos_output) 
 
         duration_output = self.duration_predictor(encoder_output)
-        duration_output = (duration_output + 0.5) * 1        
+        duration_output = (duration_output + 0.5)       
         #print("[Transformer] duration_output:", duration_output)
 
         regulated_output = self.duration_predictor.regulate_length(encoder_output, duration_output)
