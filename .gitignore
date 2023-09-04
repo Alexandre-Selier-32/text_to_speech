@@ -3,7 +3,10 @@ drafts/*
 raw_data/*
 processed_data/melspectrograms
 processed_data/tokens
-app/saved_params
+app/saved_models/*
+app/saved_models/checkpoints
+app/saved_models/final_models
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
