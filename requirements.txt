@@ -1,7 +1,6 @@
 pytest
 pylint
 ipdb
-jupyterlab
 numpy
 pandas
 matplotlib
@@ -10,7 +9,6 @@ scikit-learn
 librosa
 pydub
 soundfile
-eng_to_ipa
 phonemizer
 uvicorn
 fastapi
