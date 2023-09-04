@@ -22,7 +22,9 @@ PATH_PADDED_TOKENS = f"{LOCAL_DATA_PATH}/processed_data/tokens"
 PATH_PADDED_MELSPECS = f"{LOCAL_DATA_PATH}/processed_data/melspectrograms"
 
 # PATH MODEL
-PATH_MODEL_PARAMS = f"{LOCAL_DATA_PATH}/processed_data/model_params"
+PATH_MODEL_CHECKPOINTS = f"{LOCAL_DATA_PATH}/app/saved_models/checkpoints"
+PATH_FULL_MODEL = f"{LOCAL_DATA_PATH}/app/saved_models/final_models"
+
 PATH_PREDICTED_MELSPEC = f"{LOCAL_DATA_PATH}/processed_data/predicted_melspecs"
 
 # AUDIO PARAMS
@@ -36,5 +38,7 @@ MELSPEC_SHAPE= (80,870)
 SEQ_TOKENS_LENGTH= 212
 
 # MODEL TRAIN 
-N_EPOCHS = 10
+N_EPOCHS = 100
 BATCH_SIZE = 32
+PATIENCE = 20
+
