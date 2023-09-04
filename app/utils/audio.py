@@ -105,32 +105,23 @@ def get_padded_melspecs_dict(melspecs_dict):
 
     return padded_melspecs_dict
 
-
-def listen_to_audio(melspec): 
-    hifi_gan = HIFIGAN.from_hparams(source="speechbrain/tts-hifigan-ljspeech", savedir="tmpdir")
-    melspec_tensor = torch.tensor(melspec).float()
+def get_melspec_by_sequence_id(sequence_id):
+    file_name = f"{sequence_id}_melspecs.npy"
+    file_path = os.path.join(PATH_PADDED_MELSPECS, file_name)
     
-    if next(hifi_gan.parameters()).is_cuda:
-        melspec_tensor = melspec_tensor.cuda()
-    
-    waveforms = hifi_gan.decode_batch(melspec_tensor)
-
-    return IPython.display.Audio(waveforms, rate=SAMPLE_RATE)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File {file_name} not found in {PATH_PADDED_MELSPECS}.")
+    return np.load(file_path)
 
 
 def listen_to_audio(melspec): 
     hifi_gan = HIFIGAN.from_hparams(source="speechbrain/tts-hifigan-ljspeech", savedir="tmpdir")
     
-    # Si le tensor est un tensor TensorFlow
     if isinstance(melspec, tf.Tensor):
         melspec_numpy = melspec.numpy()
-    # Si le tensor est un tensor PyTorch
     elif isinstance(melspec, torch.Tensor):
         melspec_numpy = melspec.detach().cpu().numpy()
-    else:
-        raise ValueError("La fonction attend un tensor TensorFlow ou PyTorch.")
-    
-    # Convertir le numpy array en tensor PyTorch
+  
     melspec_tensor = torch.tensor(melspec_numpy).float()
     
     if next(hifi_gan.parameters()).is_cuda:
@@ -141,13 +132,7 @@ def listen_to_audio(melspec):
     return IPython.display.Audio(waveforms, rate=SAMPLE_RATE)
 
 
-
-############## TEEEEESTTT ######
-
-
-
-
-def save_melspecs(predicted_output):
+def save_melspec(predicted_output):
     if not os.path.exists(PATH_PREDICTED_MELSPEC):
         os.makedirs(PATH_PREDICTED_MELSPEC)
     
@@ -155,8 +140,6 @@ def save_melspecs(predicted_output):
 
     stacked_predictions = np.stack(predicted_output)
     np.save(file_path_and_name, stacked_predictions)
-    
-
 
 
 def trim_melspectrogram(melspec, threshold=0):
