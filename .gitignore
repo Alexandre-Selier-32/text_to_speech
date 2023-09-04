@@ -3,6 +3,8 @@ drafts/*
 raw_data/*
 processed_data/melspectrograms
 processed_data/tokens
+processed_data/model_params
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

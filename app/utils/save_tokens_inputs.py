@@ -15,4 +15,3 @@ def save_tokens_to_npy(path_transcriptions_csv=PATH_LJ_CSV, path_mapping_phonem=
         np.save(file_path_and_name, value)
     
     print('✅ Tokens Files saved successfully')
-    have_same_shape(PATH_PADDED_TOKENS)

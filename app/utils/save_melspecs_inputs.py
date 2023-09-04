@@ -149,4 +149,3 @@ def process_all_wavs_in_folder():
         np.save(file_path_and_name, value)
         
     print('✅ Mel spectrograms Files saved successfully')
-    have_same_shape(PATH_PADDED_MELSPECS)

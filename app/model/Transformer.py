@@ -13,11 +13,9 @@ class Transformer(Model):
         
         super().__init__()
         
-        self.embedding = layers.Embedding(input_vocab_size, embedding_dim)
-        
-        self.pos_encoding = self.positional_encoding(max_position_encoding, embedding_dim)
-        
-        self.padding_mask = self.create_tokens_padding_mask
+        self.embedding = layers.Embedding(input_dim=input_vocab_size, output_dim=embedding_dim, mask_zero=True)
+        self.masked_embedding = layers.Masking(mask_value=TOKEN_PADDING_VALUE)        
+        self.pos_encoding = self.positional_encoding(max_position_encoding, embedding_dim)     
 
         self.encoder = Encoder(num_layers, embedding_dim, num_heads, dff, 
                                conv_kernel_size, conv_filters, rate)
@@ -25,9 +23,6 @@ class Transformer(Model):
 
         self.duration_predictor = VarianceAdaptor(embedding_dim, var_conv_filters, 
                                                     var_conv_kernel_size, var_rate)
-        
-        self.duration_embedding = layers.Embedding(MAX_DURATION, embedding_dim)
-
         
         '''
         self.energy_predictor = VarianceAdaptor(embedding_dim, var_conv_filters, 
@@ -42,71 +37,34 @@ class Transformer(Model):
         
         self.final_layer = layers.Dense(870)
     
-    def call(self, phoneme_tokens_input): 
-        print("Phoneme Tokens Input:", phoneme_tokens_input)
-        
+    def call(self, phoneme_tokens_input):  
         embedding_output = self.embedding(phoneme_tokens_input) 
-        emb_dim = tf.shape(embedding_output)[2]
-        tokens_seq_len = tf.shape(embedding_output)[1]
-        
-        print("embedding output:", embedding_output)
-
-        assert embedding_output.shape[1:] == (tokens_seq_len, emb_dim) # check des 2 dernières dim
-
-        masked_embedding_output = self.padding_mask(embedding_output)
-        #print("Shape after masked embedding:", masked_embedding_output.shape)
-        assert masked_embedding_output.shape[1:] == (tokens_seq_len, emb_dim) # check des 2 dernières dim
+        masked_embedding_output = self.masked_embedding(embedding_output)
 
         seq_length = tf.shape(masked_embedding_output)[1]
-        #print("seq_length", seq_length)
-            
         embedding_and_pos_output = masked_embedding_output + self.pos_encoding[:, :seq_length, :]
-        #print("Shape after adding positional encoding:", embedding_and_pos_output.shape)
-        assert embedding_and_pos_output.shape[1:] == (tokens_seq_len, emb_dim) # check des 2 dernières dim
 
         encoder_output = self.encoder(embedding_and_pos_output) 
-        #print("Shape after encoder:", encoder_output.shape) 
-        assert encoder_output.shape[1:] == (tokens_seq_len, emb_dim) # check des 2 dernières dim
 
-        #### VARIANCE ADAPTOR BEGIN 
         duration_output = self.duration_predictor(encoder_output)
-        #print("Shape after duration predictor:", duration_output.shape)
-        assert duration_output.shape[1:] == (tokens_seq_len, 1) # check des 2 dernières dim
+        duration_output = (duration_output + 0.5) * 1        
+        #print("[Transformer] duration_output:", duration_output)
 
-        # Regulate the length of the phoneme_tokens using the predicted durations.
         regulated_output = self.duration_predictor.regulate_length(encoder_output, duration_output)
-        #print("Shape after regulate length:", regulated_output.shape)
-        assert regulated_output.shape[1:] == (80, emb_dim) # check des 2 dernières dim
-
-        #### VARIANCE ADAPTOR END 
-
+        assert_shape_regulated_output = tf.TensorShape([None, 80, 256])
+        tf.debugging.assert_shapes([(regulated_output, assert_shape_regulated_output)], message="[VarianceAdaptor] The shape of regulated_output does not match the expected shape!")
+        
         decoder_output = self.decoder(regulated_output) 
-        #print("Shape after decoder:", decoder_output.shape)
-        assert decoder_output.shape[1:] == (80, emb_dim) # check des 2 dernières dim
-
+        #print("[Transformer] decoder_output shape:", decoder_output.shape)
+        assert_decoder_output = tf.TensorShape([None, 80, 256])
+        tf.debugging.assert_shapes([(decoder_output, assert_decoder_output)], message="[Transformer] The shape of decoder_output does not match the expected shape!")
+        
         model_output = self.final_layer(decoder_output) 
-        #print("Shape after final layer:", model_output.shape)
-        assert model_output.shape[1:] == (80, 870) # check des 2 dernières dim
-
+        #print("[Transformer] model_output shape:", model_output.shape)
+        assert_model_output = tf.TensorShape([None, 80, 870])
+        tf.debugging.assert_shapes([(model_output, assert_model_output)], message="[Transformer] The shape of model_output does not match the expected shape!")
+        
         return model_output
-
-
-    def create_tokens_padding_mask(self, input):
-        """
-        Crée un masque de padding pour la séquence de tokens.
-
-        Les emplacements dans la séquence de tokens où le token est égal à la valeur de TOKEN_PADDING_VALUE
-        auront une valeur de 1 dans le masque, les autres auront une valeur de 0.
-
-        Params:
-        - sequence de tokens : Un tensor de shape (batch_size, seq_len) contenant des tokens.
-
-        Return:
-        - tf.Tensor: Un tensor de shape (batch_size, 1, 1, seq_len) représentant le masque de padding.
-        """
-        tokens_seq = input
-        tokens_seq = tf.cast(tf.math.equal(tokens_seq, TOKEN_PADDING_VALUE), tf.float32)
-        return tokens_seq
 
 
     def positional_encoding(self, position, embedding_dim):

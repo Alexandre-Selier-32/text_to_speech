@@ -5,6 +5,7 @@ from app.params import *
 from speechbrain.pretrained import HIFIGAN
 import torch
 import IPython
+import tensorflow as tf
 
 
 def display_mel_spectrogram(mel_spectrogram, sr=SAMPLE_RATE, hop_length=HOP_LENGTH):
@@ -115,3 +116,57 @@ def listen_to_audio(melspec):
     waveforms = hifi_gan.decode_batch(melspec_tensor)
 
     return IPython.display.Audio(waveforms, rate=SAMPLE_RATE)
+
+
+def listen_to_audio(melspec): 
+    hifi_gan = HIFIGAN.from_hparams(source="speechbrain/tts-hifigan-ljspeech", savedir="tmpdir")
+    
+    # Si le tensor est un tensor TensorFlow
+    if isinstance(melspec, tf.Tensor):
+        melspec_numpy = melspec.numpy()
+    # Si le tensor est un tensor PyTorch
+    elif isinstance(melspec, torch.Tensor):
+        melspec_numpy = melspec.detach().cpu().numpy()
+    else:
+        raise ValueError("La fonction attend un tensor TensorFlow ou PyTorch.")
+    
+    # Convertir le numpy array en tensor PyTorch
+    melspec_tensor = torch.tensor(melspec_numpy).float()
+    
+    if next(hifi_gan.parameters()).is_cuda:
+        melspec_tensor = melspec_tensor.cuda()
+    
+    waveforms = hifi_gan.decode_batch(melspec_tensor)
+
+    return IPython.display.Audio(waveforms, rate=SAMPLE_RATE)
+
+
+
+############## TEEEEESTTT ######
+
+
+
+
+def save_melspecs(predicted_output):
+    if not os.path.exists(PATH_PREDICTED_MELSPEC):
+        os.makedirs(PATH_PREDICTED_MELSPEC)
+    
+    file_path_and_name = f"{PATH_PREDICTED_MELSPEC}/predicted_melspec.npy"
+
+    stacked_predictions = np.stack(predicted_output)
+    np.save(file_path_and_name, stacked_predictions)
+    
+
+
+
+def trim_melspectrogram(melspec, threshold=0):
+    # Trouver les colonnes où le maximum est supérieur au seuil
+    mask = np.max(melspec, axis=0) >= threshold
+    
+    # Trouver le premier indice où le masque est True
+    idx = np.where(mask)[0][0] if mask.any() else melspec.shape[1]
+    
+    # Tronquer le melspectrogram à cet indice
+    trimmed_melspec = melspec[:, :idx]
+    
+    return trimmed_melspec

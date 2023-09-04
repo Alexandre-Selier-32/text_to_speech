@@ -9,7 +9,6 @@ class MultiHeadAttention(layers.Layer):
         self.embedding_dim = embedding_dim
         
         assert embedding_dim % self.num_heads == 0
-        
         self.depth = embedding_dim // self.num_heads
 
         self.wq = layers.Dense(embedding_dim, name = "query_projection")
