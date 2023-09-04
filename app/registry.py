@@ -4,6 +4,8 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.callbacks import ModelCheckpoint
 from app.model.Transformer import Transformer
+from keras import optimizers
+
 from app.model.CustomLearningRateScheduler import CustomLearningRateScheduler
 from app.params import *
 import matplotlib.pyplot as plt
@@ -65,18 +67,21 @@ def initialize_model(config):
     return model
 
 def compile_model(model, config):
-    lr_schedule = CustomLearningRateScheduler(embedding_dim=config.embedding_dim, warmup_steps=config.warmup_steps)
-    optimizer = tf.keras.optimizers.Adam(lr_schedule, beta_1=config.beta_1, beta_2=config.beta_1, epsilon=config.epsilon)
+    optimizer = optimizers.Adam(learning_rate=config.rate)
+    model.compile(loss="mean_squared_error", optimizer=optimizer, metrics=["mae"])
+    #lr_schedule = CustomLearningRateScheduler(embedding_dim=config.embedding_dim, warmup_steps=config.warmup_steps)
+    #optimizer = tf.keras.optimizers.Adam(lr_schedule, beta_1=config.beta_1, beta_2=config.beta_1, epsilon=config.epsilon)
 
-    model.compile(optimizer=optimizer, loss='mean_squared_error')
+    #model.compile(optimizer=optimizer, loss='mean_squared_error')
 
-def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=100):
+def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epochs=150):
     checkpoint_callback = ModelCheckpoint(
-        filepath=PATH_MODEL_PARAMS + "/checkpoint_{epoch}",
-        save_weights_only=True,
+        filepath=PATH_MODEL_PARAMS + "/checkpoint",
+        monitor="val_loss",  # Replace with your chosen metric
         save_best_only=True,
-        monitor="val_loss",
-        verbose=1,
+        save_weights_only=True,
+        mode="auto",
+        save_freq="epoch"
     )
 
     history = model.fit(
@@ -84,9 +89,8 @@ def train_model(model, train_tokens, train_melspec, val_tokens, val_melspec, epo
         y=train_melspec,
         validation_data=(val_tokens, val_melspec),
         epochs=epochs,
-       #callbacks=[checkpoint_callback]
+        callbacks=[checkpoint_callback]
     )
-
     # Visualisez l'erreur d'entraînement
     plt.plot(history.history['loss'])
     plt.title('Model Loss Over Time')
@@ -109,28 +113,14 @@ def evaluate_model(model, test_tokens, test_melspec):
     return loss
 
 
-def overfit_on_sample(model, train_tokens, train_melspec, epochs=30):
-    """
-    Overfit le modèle sur un petit échantillon de données pour tester si le modèle est capable de mémoriser cet échantillon.
-    
-    Paramètres:
-    - model: Le modèle à entraîner.
-    - train_tokens: Tokens d'entraînement.
-    - train_melspec: Melspec d'entraînement.
-    - epochs: Nombre d'époques pour l'entraînement. Par défaut à 100.
-    
-    Retourne:
-    - L'histoire de l'entraînement (objet contenant les erreurs d'entraînement pour chaque époque).
-    """
-    # Entraînez le modèle uniquement sur cet échantillon
+def overfit_on_sample(model, train_tokens, train_melspec, epochs=150):
     history = model.fit(train_tokens, train_melspec, epochs=epochs, verbose=1)
 
-    # Visualisez l'erreur d'entraînement
-    plt.plot(history.history['loss'])
-    plt.title('Model Loss Over Time')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train'], loc='upper right')
-    plt.show()
+    # plt.plot(history.history['loss'])
+    # plt.title('Model Loss Over Time')
+    # plt.ylabel('Loss')
+    # plt.xlabel('Epoch')
+    # plt.legend(['Train'], loc='upper right')
+    # plt.show()
     
     return history

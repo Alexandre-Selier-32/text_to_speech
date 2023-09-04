@@ -33,7 +33,6 @@ class VarianceAdaptor(layers.Layer):
 
         return self.dense_layer(output)
     
-    # Répète chaque token selon sa durée prédite.
     def regulate_length(self, encoder_output, predicted_durations):
         """
         Régule la longueur de la sortie de l'encodeur en fonction des durées prédites.
@@ -41,47 +40,39 @@ class VarianceAdaptor(layers.Layer):
         phonème peut s'étendre sur plusieurs melspec frames. On prend donc la sortie 
         de l'encodeur et on l'adapte pour prendre en compte la durée prédite pour chaque phonème.
         """
-    # Clipping des durées prédites pour éviter de trop étirer ou compresser la séquence
+        
+        print("encoder_output shape at the start:", tf.shape(encoder_output))
+        print("predicted_durations shape at the start:", tf.shape(predicted_durations))
+
+        # Clipping des durées prédites pour éviter de trop étirer ou compresser la séquence
         clipped_durations = tf.clip_by_value(predicted_durations, MIN_DURATION, MAX_DURATION)
+        print("clipped_durations shape:", tf.shape(clipped_durations))
 
         # conversion des durées en int pour tf.tile
         int_durations = tf.cast(tf.round(clipped_durations), tf.int32)
         int_durations = tf.squeeze(int_durations, axis=-1)  # on enlève la dernière dimension car predicted_durations est un tenseur 3D
-                        
-        expanded_output = []
-        for i in range(tf.shape(encoder_output)[0]):
-            expanded_segment = tf.repeat(encoder_output[i], int_durations[i], axis=0)
-            expanded_output.append(expanded_segment)
-                        
-        max_length = max([tf.shape(segment)[0] for segment in expanded_output])
-        
-        
-        # Pad each sequence to have the same length
-        for i in range(len(expanded_output)):
-            difference = max_length - tf.shape(expanded_output[i])[0]
-            padding = tf.constant(TOKEN_PADDING_VALUE, shape=(difference, encoder_output.shape[-1]), dtype=tf.float32)
-            expanded_output[i] = tf.concat([expanded_output[i], padding], axis=0)
-        
-        # Stack all the expanded and padded sequences
-        reshaped_output = tf.stack(expanded_output, axis=0)
-        
-        # Calculate the target length based on the clipped durations
-        target_length = tf.reduce_sum(int_durations, axis=1, keepdims=True)
-        max_target_length = tf.reduce_max(target_length)
+        print("int_durations shape:", tf.shape(int_durations))
 
-        # If the length of reshaped_output is different from the target length, add padding
-        current_length = tf.shape(reshaped_output)[1]
-        padding_amount = max_target_length - current_length
+        print("Valeurs de int_durations:", int_durations)
 
-        # Ensure the padding amount is not negative
-        padding_amount = tf.maximum(padding_amount, 0)
+        # Répéte chaque élément de encoder_output selon int_durations
+        expanded_output = tf.repeat(encoder_output, int_durations, axis=1)
 
-        padding_shape = [tf.shape(reshaped_output)[0], padding_amount, encoder_output.shape[-1]]
-        padding = tf.zeros(padding_shape, dtype=tf.float32)
+        # Trouve la longueur maximale après la répétition pour le padding
+        max_length = tf.shape(expanded_output)[1]
 
-        reshaped_output = tf.concat([reshaped_output, padding], axis=1)
+        # Calcule la quantité de padding nécessaire pour chaque séquence
+        padding_amounts = max_length - tf.reduce_sum(int_durations, axis=1)
 
-        # Ensure the final length of the sequences matches with the second dimension of the target tensors
-        reshaped_output = reshaped_output[:, :80, :]
+        # Crée n tensor de padding
+        paddings = tf.map_fn(lambda x: tf.zeros((x, tf.shape(encoder_output)[-1])), padding_amounts, dtype=tf.float32)
+
+        # Concaténe le padding à la fin de chaque séquence
+        expanded_output = tf.concat([expanded_output, paddings], axis=1)
+
+        # pour s'assurer que la longueur finale des séquences correspond à la deuxième dimension des tenseurs cibles
+        reshaped_output = expanded_output[:, :80, :]
+        print("HEEEY")
 
         return reshaped_output
+
