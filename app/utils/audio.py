@@ -121,6 +121,10 @@ def listen_to_audio(melspec):
         melspec_numpy = melspec.numpy()
     elif isinstance(melspec, torch.Tensor):
         melspec_numpy = melspec.detach().cpu().numpy()
+    elif isinstance(melspec, np.ndarray): 
+        melspec_numpy = melspec
+    else:
+        raise ValueError("Unsupported melspec type. Expected tf.Tensor, torch.Tensor, or numpy array.")
   
     melspec_tensor = torch.tensor(melspec_numpy).float()
     

@@ -181,7 +181,7 @@ def load_model(model_path):
     return model
 
 def predict_melspec(model, input_tokens):
-    input_tokens = tf.expand_dims(input_tokens, 0)  # Add batch dimension
+    input_tokens = tf.expand_dims(input_tokens, 0) 
     input_tokens = tf.convert_to_tensor(input_tokens, dtype=tf.int32)
     prediction = model.predict(input_tokens)
     return prediction
