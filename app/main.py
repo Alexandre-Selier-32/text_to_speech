@@ -32,18 +32,6 @@ def run_pipeline(data_fraction=1.0, epochs=1000):
     print('[TRAIN MODEL]: ✅ Model Training completed !')
     
     model.summary()
-
-    try:
-        save_model_in_saved_models(model)
-        print(f'[SAVE MODEL]: ✅ Model saved to in {PATH_FULL_MODEL}')
-    except Exception as e:
-        print(f"[SAVE MODEL]: ⚠️ Failed to save model. Error: {e}")
-
-    try:
-        # Evaluate the model
-        loss = evaluate_model(model, test_dataset)
-        print(f"[EVALUATE MODEL] Model loss on test data: {loss}")
-    except Exception as e:
-        print(f"[EVALUATE MODEL]: ⚠️ Model evaluation failed. Error: {e}")
     
     return model, history
+

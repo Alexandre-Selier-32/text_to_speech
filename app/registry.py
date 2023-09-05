@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import time
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 from app.model import *
 from app.params import *
@@ -101,7 +101,7 @@ def compile_model(model, config):
     model.compile(optimizer=optimizer, loss=tf.keras.losses.MeanAbsoluteError())
 
 def train_model(model, train_dataset, val_dataset, epochs):
-    
+
     checkpoint_path = f"{PATH_MODEL_CHECKPOINTS}/model_at_epoch_{{epoch:02d}}.ckpt"
 
     checkpoint_callback = ModelCheckpoint(
@@ -110,20 +110,13 @@ def train_model(model, train_dataset, val_dataset, epochs):
         save_best_only=True,   
         save_weights_only=True,
         save_freq='epoch',
+        period=50,
         verbose=1
     )
-    
-    es_callback = EarlyStopping(
-        monitor="val_loss",
-        patience=20,
-        restore_best_weights=True,
-        verbose=1
-    )
-
     history = model.fit(train_dataset, 
                         validation_data=(val_dataset),
                         epochs=epochs,
-                        callbacks=[checkpoint_callback, es_callback],
+                        callbacks=[checkpoint_callback],
                         verbose=1)
     
     # Visualise training loss and validation loss
@@ -154,6 +147,42 @@ def load_model_fom_saved_models(model_path):
     Loads the entire model from the specified path.
     """
     model = tf.keras.models.load_model(model_path)
+    return model
+
+
+def load_latest_checkpoint_from_dir():
+    """
+    Load the latest checkpoint from the specified directory.
+    
+    Parameters:
+    - config: The configuration object to initialize and compile the model.
+    - checkpoint_dir: The directory where the checkpoints are saved.
+    
+    Returns:
+    - The model with the loaded weights if a checkpoint is found.
+    - None otherwise.
+    """
+    
+    config= Config()
+    
+    checkpoints = [f for f in os.listdir(PATH_MODEL_CHECKPOINTS) if f.endswith(".ckpt.index")]
+    
+    if not checkpoints:
+        print("aucun checkpoint trouvé")
+        return None
+    
+    checkpoints.sort()
+    latest_checkpoint_name = checkpoints[-1].replace(".index", "")  # Remove the .index extension to get the actual checkpoint name
+    latest_checkpoint_path = os.path.join(PATH_MODEL_CHECKPOINTS, latest_checkpoint_name)
+    
+    model = initialize_model(config)
+    compile_model(model, config)
+    
+    model.load_weights(latest_checkpoint_path)
+    
+    input_shape = (config.embedding_dim,)
+    model.build(input_shape)
+    
     return model
 
 def predict_melspec(model, input_tokens):
