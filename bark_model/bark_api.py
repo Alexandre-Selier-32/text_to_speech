@@ -40,24 +40,29 @@ def predict(
 
     inputs = processor(
         text=[text_to_transform],
-        return_tensors="pt",
-    )
+        return_tensors="pt", )
 
 
     speech_values = model.generate(**inputs, do_sample=True)
 
+    import scipy
+    from fastapi.responses import FileResponse
+    # sampling_rate = model.config.sample_rate
+    # scipy.io.wavfile.write("bark_out.wav", rate=sampling_rate, data=speech_values.cpu().numpy().squeeze())
 
-    temp_file = NamedTemporaryFile(suffix=".wav",delete=False)
-    sf.write(temp_file.name, speech_values, samplerate=22050)
 
-    return FileResponse(temp_file.name)
+    # temp_file = NamedTemporaryFile(suffix=".wav",delete=False)
+    # sf.write(temp_file.name, speech_values, samplerate=22050)
+    scipy.io.wavfile.write("bark_out.wav", rate=22050, data=speech_values.cpu().numpy().squeeze())
+
+    wav_path = 'bark_out.wav'
+
+    return FileResponse(wav_path, media_type='audio/wav')
 
 
 @app.get("/")
 def root():
-    # $CHA_BEGIN
     return dict(status="Running")
-    # $CHA_END
 
 
 
