@@ -15,7 +15,7 @@ class MultiHeadAttention(layers.Layer):
         self.wk = layers.Dense(embedding_dim, name = "key_projection")
         self.wv = layers.Dense(embedding_dim, name = "value_projection")
 
-        self.attention = Attention(embedding_dim)
+        self.attention = Attention(embedding_dim) 
 
         self.dense = layers.Dense(embedding_dim)
 
@@ -26,7 +26,7 @@ class MultiHeadAttention(layers.Layer):
         x = tf.reshape(x, (batch_size, -1, self.num_heads, self.depth))
         return tf.transpose(x, perm=[0, 2, 1, 3])
 
-    def call(self, v, k, q):
+    def call(self, v, k, q, mask=None):
         batch_size = tf.shape(q)[0]
 
         q = self.wq(q)
@@ -37,11 +37,10 @@ class MultiHeadAttention(layers.Layer):
         k = self.split_heads(k, batch_size)
         v = self.split_heads(v, batch_size)
 
-        scaled_attention = self.attention(q, k, v)
-        scaled_attention = tf.transpose(scaled_attention, perm=[0, 2, 1, 3]) # (batch_size, seq_len_q, num_heads, depth)
-        concat_attention = tf.reshape(scaled_attention, (batch_size, -1, self.embedding_dim)) # (batch_size, seq_len_q, embedding_dim)
+        scaled_attention = self.attention(q, k, v, mask)
+        scaled_attention = tf.transpose(scaled_attention, perm=[0, 2, 1, 3])
+        concat_attention = tf.reshape(scaled_attention, (batch_size, -1, self.embedding_dim))
         
-        # attention_ouptut : c'est l'output après avoir combiné les résultats de toutes les têtes d'attention
-        attention_ouptut = self.dense(concat_attention) # (batch_size, seq_len_q, embedding_dim)
+        attention_ouptut = self.dense(concat_attention) 
 
         return attention_ouptut

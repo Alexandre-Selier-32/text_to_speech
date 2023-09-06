@@ -2,7 +2,8 @@ from app.model.Attention import Attention
 from app.model.MultiHeadAttention import MultiHeadAttention
 from app.model.Encoder import Encoder
 from app.model.Decoder import Decoder
-from app.model.EncodecLayer import EncodecLayer
+from app.model.EncoderLayer import EncoderLayer
+from app.model.DecoderLayer import DecoderLayer
 from app.model.VarianceAdaptor import VarianceAdaptor
 from app.model.Transformer import Transformer
 from app.model.CustomLearningRateScheduler import CustomLearningRateScheduler

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers
-from app.model.EncodecLayer import EncodecLayer
+from app.model.DecoderLayer import DecoderLayer
 
 
 class Decoder(layers.Layer):
@@ -8,10 +8,9 @@ class Decoder(layers.Layer):
                 conv_kernel_size, conv_filters, rate):
         super(Decoder, self).__init__()
 
-        self.embedding_dim = embedding_dim
         self.num_layers = num_layers
 
-        self.decoder_layers = [EncodecLayer(embedding_dim, num_heads, dff, conv_kernel_size, conv_filters, rate)
+        self.decoder_layers = [DecoderLayer(embedding_dim, num_heads, dff, conv_kernel_size, conv_filters, rate)
                            for _ in range(num_layers)]
 
         self.dropout = layers.Dropout(rate)

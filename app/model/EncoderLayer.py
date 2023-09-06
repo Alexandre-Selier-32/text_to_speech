@@ -2,25 +2,19 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from app.model.MultiHeadAttention import MultiHeadAttention
 
-class EncodecLayer(layers.Layer):
+        
+class EncoderLayer(layers.Layer):
     def __init__(self, embedding_dim, num_heads, dff, conv_kernel_size, conv_filters, rate):
-        super(EncodecLayer, self).__init__()
+        super().__init__()
 
         # Multihead Attention
         self.multihead_att = MultiHeadAttention(embedding_dim, num_heads)
-        
-        '''
-        FastSpeech2 architecture (https://arxiv.org/pdf/2006.04558.pdf):
-        -  2-layer 1D-convolutional network with ReLU activation,
-        - each followed by the layer normalization and the dropout layer
-        - and an extra linear layer to project the hidden states into the output sequence. 
-        '''
-        
+
         # Convolutions 1D 
         self.conv1 = layers.Conv1D(filters=conv_filters, kernel_size=conv_kernel_size, 
                                          strides=1, padding='same', activation='relu')
-        self.conv2 = layers.Conv1D(filters=embedding_dim, kernel_size=conv_kernel_size, 
-                                         strides=1, padding='same')
+        self.conv2 = layers.Conv1D(filters=conv_filters, kernel_size=conv_kernel_size, 
+                                         strides=1, padding='same', activation='relu')
     
 
         self.layernorm = layers.LayerNormalization(epsilon=1e-6)
@@ -39,25 +33,29 @@ class EncodecLayer(layers.Layer):
             layers.Dense(embedding_dim) # 2eme couche ramène la dim à la dim de l'embedding
         ])
         
-        
-    def call(self, input):
-        attention_output = self.multihead_att(input, input, input)
-        '''
-        Attention is All You Need (https://arxiv.org/pdf/1706.03762.pdf)
-        We apply dropout to the output of each sub-layer, before it is added to the
-        sub-layer input and normalized.'''
-        attention_output = self.dropout(attention_output)
+       
+    '''
+    Attention is All You Need (https://arxiv.org/pdf/1706.03762.pdf)
+    We apply dropout to the output of each sub-layer, before it is added to the
+    sub-layer input and normalized.
+    ''' 
+    def call(self, input, training, mask=None):
+        attention_output = self.multihead_att(input, input, input, mask)
+        attention_output = self.dropout(attention_output, training=training)
         attention_output = self.layernorm(input + attention_output)
-        
+
         # Convolutions 1D
-        conv_output = self.conv1(attention_output)
-        conv_output = self.conv2(conv_output)
-        conv_output = self.dropout(conv_output)
-        conv_output = self.layernorm(attention_output + conv_output)
-        
+        conv1 = self.conv1(attention_output)
+        conv1 = self.dropout(conv1, training=training)
+        conv1 = self.layernorm(attention_output + conv1)
+
+        conv2 = self.conv2(conv1)
+        conv2 = self.dropout(conv2, training=training)
+        conv2 = self.layernorm(conv1 + conv2)
+
         # Feed Forward 
-        ff_output = self.ff(conv_output)
-        ff_output = self.dropout(ff_output)
-        ff_output = self.layernorm(conv_output + ff_output)
+        ff_output = self.ff(conv2)
+        ff_output = self.dropout(ff_output, training=training)
+        ff_output = self.layernorm(conv2 + ff_output)
 
         return ff_output

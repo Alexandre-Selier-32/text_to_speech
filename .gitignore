@@ -1,8 +1,7 @@
 # Project Dir
 drafts/*
 raw_data/*
-processed_data/melspectrograms
-processed_data/tokens
+processed_data/*
 app/saved_models/*
 app/saved_models/checkpoints
 app/saved_models/final_models
