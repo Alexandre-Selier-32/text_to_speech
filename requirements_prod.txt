@@ -1,0 +1,11 @@
+pylint
+ipdb
+scikit-learn
+librosa
+pydub
+soundfile
+phonemizer
+uvicorn
+fastapi
+speechbrain
+torch

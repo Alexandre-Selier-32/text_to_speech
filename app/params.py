@@ -28,8 +28,8 @@ PATH_FULL_MODEL = f"{LOCAL_DATA_PATH}/app/saved_models/final_models"
 PATH_PREDICTED_MELSPEC = f"{LOCAL_DATA_PATH}/processed_data/predicted_melspecs"
 
 # PATHS BARK
-PATH_BARK_WAV = f"{LOCAL_DATA_PATH}/bark_model/wav"
-PATH_BARK_DUMMY_WAV = f"{LOCAL_DATA_PATH}/bark_model/dummy_wav"
+PATH_Tacatron2_WAV = f"{LOCAL_DATA_PATH}/Tacotron2_model/wav"
+PATH_Tacatron2_DUMMY_WAV = f"{LOCAL_DATA_PATH}/Tacotron2_model/dummy_wav"
 
 # AUDIO PARAMS
 SAMPLE_RATE=22050
