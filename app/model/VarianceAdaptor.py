@@ -10,15 +10,18 @@ each followed by the layer normalization and the dropout layer, and an extra lin
 the hidden states into the output sequence.
 '''
 class VarianceAdaptor(layers.Layer):
-    def __init__(self, embedding_dim, conv_filters, conv_kernel_size, rate):
+    def __init__(self, embedding_dim, conv_filters, conv_kernel_size, var_rate):
         super(VarianceAdaptor, self).__init__()
-        self.conv_layers = []
-        self.norm_layers = []
-        for _ in range(2):
-            self.conv_layers.append(layers.Conv1D(filters=conv_filters, kernel_size=conv_kernel_size, 
-                                                  strides=1, padding='same', activation='relu'))
-            self.norm_layers.append(layers.LayerNormalization(epsilon=1e-6))
-        self.dropout = layers.Dropout(rate=rate)
+        self.conv1 = layers.Conv1D(filters=conv_filters, kernel_size=conv_kernel_size, 
+                                         strides=1, padding='same', activation='relu')
+        self.conv2 = layers.Conv1D(filters=conv_filters, kernel_size=conv_kernel_size, 
+                                         strides=1, padding='same', activation='relu')
+    
+
+        self.layernorm = layers.LayerNormalization(epsilon=1e-6)
+        
+        self.dropout = layers.Dropout(rate=var_rate)
+        
         self.dense_layer = layers.Dense(1)
     
     def call(self, input):
